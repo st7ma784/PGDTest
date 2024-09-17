@@ -33,3 +33,11 @@ We welcome contributions! Please fork the repository and submit a pull request.
 
 ## License
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+## Stephens Critique 
+
+In this code, theres  lot that needs to be understood. Firstly, I figure It's worth looking at the oprimizers being used- for some reason there's  a little alrm bell ringing in my head that we should be using naAdam or Adam W optimizer over just SGD for training.... Might be worth consulting the originl paper ?
+
+Secondly, I'm super curious about the janky way the prompts exist to create train classes, and generate prompts- especially just plainly repeating it across the batch rather than per class desired? (consult the demo notebook in the OpenAI repo?)
+
+Thirdly, I am really rather uncertain about the direct training of the CLIP model. The pretrained models are pretty DAMN robust!!! any training, especially just on classes is going to undo that!? Otherwise, I really like the way they convert they do classification from a single encoder, it's very clever if it weren't for perhaps accidentally untraining the Visual Semantic Embeddings... (DEVISE would be a good exemplar paper to consult for this approach)
