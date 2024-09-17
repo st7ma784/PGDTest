@@ -4,20 +4,130 @@ class baseparser(HyperOptArgumentParser):
     def __init__(self,*args,strategy="random_search",**kwargs):
 
         super().__init__( *args,strategy=strategy, add_help=False) # or random search
-        self.add_argument("--dir",default="./data",type=str)
-        self.add_argument("--log_path",default="./logs/",type=str)
-        self.opt_list("--learning_rate", default=0.0001, type=float, options=[2e-4,1e-4,5e-5,1e-5,4e-6], tunable=True)
-        self.opt_list("--batch_size", default=80, type=int)
+
+        #our base parser looks like :
+        '''
+            parser = argparse.ArgumentParser('Pre-trained-Model-Guided-Fine-Tuning for CLIP')
+
+            parser.add_argument('--print_freq', type=int, default=20)
+            parser.add_argument('--save_freq', type=int, default=50)
+            parser.add_argument('--test_freq', type=int, default=3)
+            parser.add_argument('--batch_size', type=int, default=256)
+            parser.add_argument('--num_workers', type=int, default=32)
+            parser.add_argument('--epochs', type=int, default=10)
+            parser.add_argument('--learning_rate', type=float, default=5e-5)
+            parser.add_argument("--weight_decay", type=float, default=0)
+            parser.add_argument("--warmup", type=int, default=1000)
+            parser.add_argument('--momentum', type=float, default=0.9)
+            parser.add_argument('--train_eps', type=float, default=2)
+            parser.add_argument('--train_numsteps', type=int, default=5)
+            parser.add_argument('--train_stepsize', type=int, default=1)
+            parser.add_argument('--test_eps', type=float, default=1)
+            parser.add_argument('--test_numsteps', type=int, default=10)
+            parser.add_argument('--test_stepsize', type=int, default=1)
+            parser.add_argument('--earlystop', type=int, default=1000)
+
+            # model
+            parser.add_argument('--model', type=str, default='clip')
+            parser.add_argument('--imagenet_root', type=str, default=None)
+            parser.add_argument('--arch', type=str, default='vit_b32')
+            parser.add_argument('--method', type=str, default='null_patch',
+                                choices=['null_patch'],
+                                help='choose visual prompting method')
+            parser.add_argument('--name', type=str, default='')
+            parser.add_argument('--prompt_size', type=int, default=30,
+                                help='size for visual prompts')
+            parser.add_argument('--add_prompt_size', type=int, default=0,
+                                help='size for additional visual prompts')
+
+            # dataset
+            parser.add_argument('--root', type=str, default='./data')
+            parser.add_argument('--dataset', type=str, default='cifar100')
+            parser.add_argument('--image_size', type=int, default=224)
+
+            # other
+            parser.add_argument('--seed', type=int, default=0,
+                                help='seed for initializing training')
+            parser.add_argument('--model_dir', type=str, default='./save/models',
+                                help='path to save models')
+            parser.add_argument('--filename', type=str, default=None)
+            parser.add_argument('--trial', type=int, default=1)
+            parser.add_argument('--resume', type=str, default=None)
+            parser.add_argument('--evaluate', default=False, action="store_true", )
+            parser.add_argument('--gpu', type=int, default=None)
+            parser.add_argument('--debug', action='store_true')
+            parser.add_argument('--Noattack', action='store_true')
+            parser.add_argument('--CW', action='store_true')
+
+            parser.add_argument('--train_class_count', type=int, default=90)
+            parser.add_argument('--last_num_ft', type=int, default=-1)
+
+            parser.add_argument('--noimginprop', action='store_true')
+            parser.add_argument('--autoattack', action='store_true')
+            args = parser.parse_args()
+
+            args.filename = '{}_{}_{}_{}_{}_{}_lr_{}_decay_{}_bsz_{}_warmup_{}_trial_{}_addp_{}'. \
+                format(args.name, args.method, args.prompt_size, args.dataset, args.model, args.arch,
+                    args.learning_rate, args.weight_decay, args.batch_size, args.warmup, args.trial,
+                    args.add_prompt_size)
+
+            return arg
         
-        #INSERT YOUR OWN PARAMETERS HERE
-        self.opt_list("--codeversion",default=-1,options=[1,2,3,4,5,6])
-        self.opt_list("--precision", default=16, options=[16], tunable=False)
+        '''
+        self.opt_list("--print_freq", default=20, type=int, tunable=False)
+        self.opt_list("--save_freq", default=50, type=int, tunable=False)
+        self.opt_list("--test_freq", default=3, type=int, tunable=False)
+        self.opt_list("--batch_size", default=256, type=int, tunable=False)
+        self.opt_list("--num_workers", default=32, type=int, tunable=False)
+        self.opt_list("--epochs", default=10, type=int, tunable=False)
+        self.opt_list("--learning_rate", default=5e-5, type=float, tunable=False)
+        self.opt_list("--weight_decay", default=0, type=float, tunable=False)
+        self.opt_list("--warmup", default=1000, type=int, tunable=False)
+        self.opt_list("--momentum", default=0.9, type=float, tunable=False)
+        self.opt_list("--train_eps", default=2, type=float, tunable=False)
+        self.opt_list("--train_numsteps", default=5, type=int, tunable=False)
+        self.opt_list("--train_stepsize", default=1, type=int, tunable=False)
+        self.opt_list("--test_eps", default=1, type=float, tunable=False)
+        self.opt_list("--test_numsteps", default=10, type=int, tunable=False)
+        self.opt_list("--test_stepsize", default=1, type=int, tunable=False)
+        self.opt_list("--earlystop", default=1000, type=int, tunable=False)
+        # model
+        self.opt_list("--model", default='clip', type=str, tunable=False)
+        self.opt_list("--imagenet_root", default=None, type=str, tunable=False)
+        self.opt_list("--arch", default='vit_b32', type=str, tunable=False)
+        self.opt_list("--method", default='null_patch', type=str, options=['null_patch'], tunable=False)
+        self.opt_list("--name", default='', type=str, tunable=False)
+        self.opt_list("--prompt_size", default=30, type=int, tunable=False)
+        self.opt_list("--add_prompt_size", default=0, type=int, tunable=False)
+        # dataset
+        self.opt_list("--root", default='./data', type=str, tunable=False)
+        self.opt_list("--dataset", default='cifar100', type=str, tunable=False)
+        self.opt_list("--image_size", default=224, type=int, tunable=False)
+        # other
+        self.opt_list("--seed", default=0, type=int, tunable=False)
+        self.opt_list("--model_dir", default='./save/models', type=str, tunable=False)
+        self.opt_list("--filename", default=None, type=str, tunable=False)
+        self.opt_list("--trial", default=1, type=int, tunable=False)
+        self.opt_list("--resume", default=None, type=str, tunable=False)
+        self.opt_list("--evaluate", default=False, action="store_true", tunable=False)
+        self.opt_list("--gpu", default=None, type=int, tunable=False)
+        self.opt_list("--debug", action='store_true', tunable=False)
+        self.opt_list("--Noattack", action='store_true', tunable=False)
+        self.opt_list("--CW", action='store_true', tunable=False)
+        self.opt_list("--train_class_count", default=90, type=int, tunable=False)
+        self.opt_list("--last_num_ft", default=-1, type=int, tunable=False)
+        self.opt_list("--noimginprop", action='store_true', tunable=False)
+        self.opt_list("--autoattack", action='store_true', tunable=False)
+        self.file_name = '{}_{}_{}_{}_{}_{}_lr_{}_decay_{}_bsz_{}_warmup_{}_trial_{}_addp_{}'.format(self.name, self.method, self.prompt_size, self.dataset, self.model, self.arch, self.learning_rate, self.weight_decay, self.batch_size, self.warmup, self.trial, self.add_prompt_size)
+
         self.opt_list("--accelerator", default='gpu', type=str, options=['gpu'], tunable=False)
         self.opt_list("--num_trials", default=0, type=int, tunable=False)
         #self.opt_range('--neurons', default=50, type=int, tunable=True, low=100, high=800, nb_samples=8, log_base=None)
         
         #This is important when passing arguments as **config in launcher
-        self.argNames=["dir","log_path","learning_rate","batch_size","modelname","precision","codeversion","accelerator","num_trials"]
+        self.keys_of_interest=set()
+        self.argNames = [i for i in self.__dict__.keys() if i not in ['argNames','keys_of_interest','run_configs']]
+        
     def __dict__(self):
         return {k:self.parse_args().__dict__[k] for k in self.argNames}
 

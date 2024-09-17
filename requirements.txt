@@ -8,3 +8,15 @@ matplotlib
 torch_cka
 test_tube
 pycocotools
+autoattack
+einops
+folder
+h5py
+matplotlib
+numpy
+pandas
+Pillow
+pycountry
+scipy
+tqdm
+vision
