@@ -304,22 +304,22 @@ class myLightningModule(LightningModule):
         
         tmp = clip_img_preprocessing(images)
 
-        prompted_images = prompter(tmp)
-        prompted_clean_images = prompter(tem_clean)
+        prompted_images = self.prompter(tmp)
+        prompted_clean_images = self.prompter(tem_clean)
         prompt_token = None
 
-        output= multiGPU_CLIP( model, prompted_images, text_tokens,
+        output= multiGPU_CLIP( self.model, prompted_images, text_tokens,
                                                 prompt_token)
-        output_ori= multiGPU_CLIP( model_ori, prompted_images,
+        output_ori= multiGPU_CLIP( self.model_ori, prompted_images,
                                                         text_tokens,
                                                         prompt_token)
-        output_clean = multiGPU_CLIP( model, prompted_clean_images,
+        output_clean = multiGPU_CLIP( self.model, prompted_clean_images,
                                                             text_tokens,
                                                             prompt_token)
 
-        loss_advori = criterion_kl(F.log_softmax(output, dim=1), F.softmax(output_ori, dim=1))
-        loss_advclean = criterion_kl(F.log_softmax(output, dim=1), F.softmax(output_clean, dim=1))
-        loss = criterion(output, target) + loss_advclean + loss_advori
+        loss_advori = self.criterion_kl(F.log_softmax(output, dim=1), F.softmax(output_ori, dim=1))
+        loss_advclean = self.criterion_kl(F.log_softmax(output, dim=1), F.softmax(output_clean, dim=1))
+        loss = self.criterion(output, target) + loss_advclean + loss_advori
         # print(loss)
 
                 
