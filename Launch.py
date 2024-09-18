@@ -19,7 +19,7 @@ def train(config={
     #### EDIT HERE FOR DIFFERENT VERSIONS OF A MODEL
     from models.train import myLightningModule
 
-    model=myLightningModule(  **config)
+    model=myLightningModule(config)
     if dir is None:
         dir=config.get("dir",".")
     if Dataset is None:
