@@ -76,6 +76,9 @@ def get_text_prompts_train(args, train_dataset, template='This is a photo of a {
 
     class_names = refine_classname(class_names)
     texts_train = [template.format(label) for label in class_names]
+    #now tokenize it!
+
+
     return texts_train
 
 
@@ -242,7 +245,7 @@ class MyDataModule(pl.LightningDataModule):
                     texts_tmp = each.clip_prompts
                 else:
                     class_names = each.classes
-                    if val_dataset_name[cnt] == 'ImageNet' or val_dataset_name[cnt] == 'tinyImageNet':
+                    if self.val_dataset_names[cnt] == 'ImageNet' or self.val_dataset_names[cnt] == 'tinyImageNet':
                         from utils import load_imagenet_folder2name
                         folder2name = load_imagenet_folder2name('imagenet_classes_names.txt')
                         new_class_names = []
