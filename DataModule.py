@@ -27,6 +27,10 @@ from typing import List
 from utils import to_rgb,refine_classname
 
 
+import torchvision.transforms as transforms
+import pytorch_lightning as pl
+
+
 
 ImageNet_MEAN = (0.485, 0.456, 0.406)
 ImageNet_STD = (0.229, 0.224, 0.225)
@@ -34,173 +38,13 @@ ImageNet_STD = (0.229, 0.224, 0.225)
 mu_img = torch.tensor(ImageNet_MEAN).view(3, 1, 1).cuda()
 std_img = torch.tensor(ImageNet_STD).view(3, 1, 1).cuda()
 
-   
-    imagenet_root = '/data/wangsibo/ImageNet'
-    tinyimagenet_root = '/data/wangsibo/tinyImageNet/tiny-imagenet-200'
-    imgnet_full = imagenet_root
-
-    if args.imagenet_root is not None:
-        imagenet_root = args.imagenet_root
-    preprocess = transforms.Compose([
-        transforms.ToTensor()
-    ])
-    preprocess224_a = transforms.Compose([
-        transforms.Resize(256),
-        transforms.CenterCrop(224),
-        transforms.ToTensor()
-    ])
-    preprocess224 = transforms.Compose([
-        transforms.Lambda(lambda image: to_rgb(image)),
-        transforms.Resize(256),
-        transforms.CenterCrop(224),
-        transforms.ToTensor()
-    ])
-    preprocess224_interpolate = transforms.Compose([
-        transforms.Resize((224, 224)),
-        transforms.ToTensor()
-    ])
-    preprocess112_interpolate = transforms.Compose([
-        transforms.Resize((112, 112)),
-        transforms.ToTensor()
-    ])
-
-    if args.dataset == 'cifar100':
-        train_dataset = CIFAR100(args.root, transform=preprocess224,
-                                 download=True, train=True)
-
-        val_dataset = CIFAR100(args.root, transform=preprocess,
-                               download=True, train=False)
-    elif args.dataset == 'cifar10':
-        train_dataset = CIFAR10(args.root, transform=preprocess,
-                                download=True, train=True)
-
-        val_dataset = CIFAR10(args.root, transform=preprocess,
-                              download=True, train=False)
-
-    elif args.dataset == 'ImageNet':
-        train_dataset = torchvision.datasets.ImageFolder(
-            os.path.join(imagenet_root, 'train'),
-            transform=preprocess224
-        )
-
-    elif args.dataset == 'tinyImageNet':
-        train_dataset = torchvision.datasets.ImageFolder(
-            root=os.path.join(tinyimagenet_root, 'train'),
-            transform=preprocess224_a)
-
-    val_dataset_list = []
-    if args.evaluate:
-        val_dataset_name = ['cifar10', 'cifar100', 'STL10', 'SUN397', 'Food101',
-                            'oxfordpet', 'flowers102', 'dtd', 'EuroSAT', 'fgvc_aircraft',
-                            'tinyImageNet', 'ImageNet', 'Caltech101', 'Caltech256', 'StanfordCars', 'PCAM']
-
-    else:
-        val_dataset_name = ['cifar10', 'cifar100', 'STL10', 'SUN397', 'Food101',
-                            'oxfordpet', 'flowers102', 'dtd', 'EuroSAT', 'fgvc_aircraft',
-                            'tinyImageNet', 'ImageNet', 'Caltech101', 'Caltech256', 'StanfordCars', 'PCAM']
-    for each in val_dataset_name:
-        if each == 'cifar10':
-            val_dataset_list.append(CIFAR10(args.root, transform=preprocess,
-                                            download=True, train=False))
-        elif each == 'cifar100':
-            val_dataset_list.append(CIFAR100(args.root, transform=preprocess,
-                                             download=True, train=False))
-
-        elif each == 'Caltech101':
-            val_dataset_list.append(Caltech101(args.root, target_type='category', transform=preprocess224,
-                                               download=False))
-        elif each == 'PCAM':
-            val_dataset_list.append(PCAM(args.root, split='test', transform=preprocess224,
-                                         download=False))
-        elif each == 'STL10':
-            val_dataset_list.append(STL10(args.root, split='test',
-                                          transform=preprocess, download=True))
-        elif each == 'SUN397':
-            val_dataset_list.append(SUN397(args.root,
-                                           transform=preprocess224, download=True))
-        elif each == 'StanfordCars':
-            val_dataset_list.append(StanfordCars(args.root, split='test',
-                                                 transform=preprocess224, download=False))
-        elif each == 'Food101':
-            val_dataset_list.append(Food101(args.root, split='test',
-                                            transform=preprocess224, download=True))
-        elif each == 'oxfordpet':
-            val_dataset_list.append(OxfordIIITPet(args.root, split='test',
-                                                  transform=preprocess224, download=True))
-        elif each == 'EuroSAT':
-            val_dataset_list.append(EuroSAT(args.root,
-                                            transform=preprocess224, download=True))
-
-        elif each == 'Caltech256':
-            val_dataset_list.append(Caltech256(args.root, transform=preprocess224,
-                                               download=False))
-        elif each == 'flowers102':
-            val_dataset_list.append(Flowers102(args.root, split='test',
-                                               transform=preprocess224, download=True))
-        elif each == 'dtd':
-            val_dataset_list.append(DTD(args.root, split='test',
-                                        transform=preprocess224, download=True))
-
-        elif each == 'fgvc_aircraft':
-            val_dataset_list.append(FGVCAircraft(args.root, split='test',
-                                                 transform=preprocess224, download=True))
-
-        elif each == 'ImageNet':
-            val_dataset_list.append(torchvision.datasets.ImageFolder(
-                os.path.join(imgnet_full, 'val'),
-                transform=preprocess224))
-
-        elif each == 'tinyImageNet':
-            val_dataset_list.append(torchvision.datasets.ImageFolder(
-                os.path.join(tinyimagenet_root, 'val'),
-                transform=preprocess224))
-
-    train_sampler = None
-    val_sampler = None
-
-    train_loader = DataLoader(train_dataset,
-                              batch_size=args.batch_size, pin_memory=True,
-                              num_workers=args.num_workers, shuffle=True, sampler=train_sampler)
-
-    val_loader_list = [DataLoader(each,
-                                  batch_size=args.batch_size, pin_memory=True,
-                                  num_workers=args.num_workers, shuffle=False, sampler=val_sampler) for each in
-                       val_dataset_list]
-
-    class_names = train_dataset.classes
-
-    if args.dataset == 'ImageNet' or args.dataset == 'tinyImageNet':
-        from utils import load_imagenet_folder2name
-        folder2name = load_imagenet_folder2name('imagenet_classes_names.txt')
-        new_class_names = []
-        for each in class_names:
-            new_class_names.append(folder2name[each])
-
-        class_names = new_class_names
-
-    class_names = refine_classname(class_names)
-    texts_train = [template.format(label) for label in class_names]
-
-    texts_list = []
-    for cnt, each in enumerate(val_dataset_list):
-        if hasattr(each, 'clip_prompts'):
-            texts_tmp = each.clip_prompts
-        else:
-            class_names = each.classes
-            if val_dataset_name[cnt] == 'ImageNet' or val_dataset_name[cnt] == 'tinyImageNet':
-                from utils import load_imagenet_folder2name
-                folder2name = load_imagenet_folder2name('imagenet_classes_names.txt')
-                new_class_names = []
-                for class_name in class_names:
-                    new_class_names.append(folder2name[class_name])
-                class_names = new_class_names
-
-            class_names = refine_classname(class_names)
-            texts_tmp = [template.format(label) for label in class_names]
-        texts_list.append(texts_tmp)
-    assert len(texts_list) == len(val_dataset_list)
 
 preprocess = transforms.Compose([
+    transforms.ToTensor()
+])
+preprocess224_a = transforms.Compose([
+    transforms.Resize(256),
+    transforms.CenterCrop(224),
     transforms.ToTensor()
 ])
 preprocess224 = transforms.Compose([
@@ -213,87 +57,11 @@ preprocess224_interpolate = transforms.Compose([
     transforms.Resize((224, 224)),
     transforms.ToTensor()
 ])
+preprocess112_interpolate = transforms.Compose([
+    transforms.Resize((112, 112)),
+    transforms.ToTensor()
+])
 
-
-def load_train_dataset(args):
-    if args.dataset == 'cifar100':
-        return CIFAR100(args.root, transform=preprocess, download=True, train=True)
-    elif args.dataset == 'cifar10':
-        return CIFAR10(args.root, transform=preprocess, download=True, train=True)
-    elif args.dataset == 'ImageNet':
-        assert args.imagenet_root is not None
-        print(f"Loading ImageNet from {args.imagenet_root}")
-        return ImageFolder(os.path.join(args.imagenet_root, 'train'), transform=preprocess224)
-    elif args.dataset == 'tinyImageNet':
-        assert args.tinyimagenet_root is not None
-        print(f"Loading tinyImageNet from {args.tinyimagenet_root}")
-        return ImageFolder(os.path.join(args.tinyimagenet_root, 'train'), transform=preprocess224)
-    else:
-        print(f"Train dataset {args.dataset} not implemented")
-        raise NotImplementedError
-
-
-def load_val_datasets(args, val_dataset_names):
-    val_dataset_list = []
-    for each in val_dataset_names:
-        if each == 'cifar10':
-            val_dataset_list.append(CIFAR10(args.root, transform=preprocess,
-                                            download=True, train=False))
-        elif each == 'cifar100':
-            val_dataset_list.append(CIFAR100(args.root, transform=preprocess,
-                                             download=True, train=False))
-        elif each == 'Caltech101':
-            val_dataset_list.append(Caltech101(args.root, target_type='category', transform=preprocess224,
-                                               download=False))
-        elif each == 'PCAM':
-            val_dataset_list.append(PCAM(args.root, split='test', transform=preprocess224,
-                                         download=False))
-        elif each == 'STL10':
-            val_dataset_list.append(STL10(args.root, split='test',
-                                          transform=preprocess, download=True))
-        elif each == 'SUN397':
-            val_dataset_list.append(SUN397(args.root,
-                                           transform=preprocess224, download=True))
-        elif each == 'StanfordCars':
-            val_dataset_list.append(StanfordCars(args.root, split='test',
-                                                 transform=preprocess224, download=False))
-        elif each == 'Food101':
-            val_dataset_list.append(Food101(args.root, split='test',
-                                            transform=preprocess224, download=True))
-        elif each == 'oxfordpet':
-            val_dataset_list.append(OxfordIIITPet(args.root, split='test',
-                                                  transform=preprocess224, download=True))
-        elif each == 'EuroSAT':
-            val_dataset_list.append(EuroSAT(args.root,
-                                            transform=preprocess224, download=True))
-        elif each == 'Caltech256':
-            val_dataset_list.append(Caltech256(args.root, transform=preprocess224,
-                                               download=False))
-        elif each == 'flowers102':
-            val_dataset_list.append(Flowers102(args.root, split='test',
-                                               transform=preprocess224, download=True))
-        elif each == 'Country211':
-            val_dataset_list.append(Country211(args.root, split='test',
-                                               transform=preprocess224, download=True))
-        elif each == 'dtd':
-            val_dataset_list.append(DTD(args.root, split='test',
-                                        transform=preprocess224, download=True))
-        elif each == 'fgvc_aircraft':
-            val_dataset_list.append(FGVCAircraft(args.root, split='test',
-                                                 transform=preprocess224, download=True))
-        elif each == 'hateful_memes':
-            val_dataset_list.append(HatefulMemes(args.root, splits=['test_seen', 'test_unseen'],
-                                                 transform=preprocess224_interpolate))
-        elif each == 'ImageNet':
-            val_dataset_list.append(ImageFolder(os.path.join(args.imagenet_root, 'val'), transform=preprocess224))
-        elif each == 'tinyImageNet':
-            val_dataset_list.append(ImageFolder(
-                os.path.join(args.tinyimagenet_root, 'val'),
-                transform=preprocess224))
-        else:
-            print(f"Val dataset {each} not implemented")
-            raise NotImplementedError
-    return val_dataset_list
 
 
 def get_text_prompts_train(args, train_dataset, template='This is a photo of a {}'):
@@ -359,10 +127,6 @@ class CustomImageNetDataset(Dataset):
 
         return image, label
 
-
-import torchvision.transforms as transforms
-import pytorch_lightning as pl
-
 class MyDataModule(pl.LightningDataModule):
     def __init__(self, imagenet_root: str, tinyimagenet_root: str, dataset: str, val_dataset_names: List[str], batch_size: int):
         super().__init__()
@@ -372,7 +136,20 @@ class MyDataModule(pl.LightningDataModule):
         self.val_dataset_names = val_dataset_names
         self.batch_size = batch_size
         self.template = 'This is a photo of a {}'
+    
+        # imagenet_root = '/data/wangsibo/ImageNet'
+        # tinyimagenet_root = '/data/wangsibo/tinyImageNet/tiny-imagenet-200'
+        # imgnet_full = imagenet_root
 
+        if args.evaluate:
+            val_dataset_name = ['cifar10', 'cifar100', 'STL10', 'SUN397', 'Food101',
+                                'oxfordpet', 'flowers102', 'dtd', 'EuroSAT', 'fgvc_aircraft',
+                                'tinyImageNet', 'ImageNet', 'Caltech101', 'Caltech256', 'StanfordCars', 'PCAM']
+
+        else:
+            val_dataset_name = ['cifar10', 'cifar100', 'STL10', 'SUN397', 'Food101',
+                                'oxfordpet', 'flowers102', 'dtd', 'EuroSAT', 'fgvc_aircraft',
+                                'tinyImageNet', 'ImageNet', 'Caltech101', 'Caltech256', 'StanfordCars', 'PCAM']
 
     def prepare_data(self):
         # No preparation needed
