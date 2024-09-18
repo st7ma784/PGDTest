@@ -57,7 +57,16 @@ class myLightningModule(LightningModule):
         self.add_prompter = TokenPrompter(add_prompt_len)
         self.criterion = torch.nn.CrossEntropyLoss()
         self.criterion_kl = nn.KLDivLoss(reduction="sum")
+        '''
+        Dear Afra, heres where you put you transformer decoder to build your image! 
+        
+        i.e  self.model_clean_image_generator = TransformerDecoder()
+        
+        You probably also want to add a loss function here, and you can do that by adding it to the forward pass.
 
+        self.YourCriterion = nn.CrossEntropyLoss() ? maybe MSE? but I suspect you actually might want DICE loss/ 
+        
+        '''
         if args.norm=='l_inf':
             self.init_delta=self.init_uniform
             self.clamp=self.clamp_inf
@@ -199,6 +208,15 @@ class myLightningModule(LightningModule):
         images, text, target = batch
         prompted_clean_images = self.prompter(images)
         images=self.attack(images, target, text, self.args.alpha, self.args.attack_iters, epsilon=self.args.train_eps)
+        '''
+        Here's where you run the dirty image through your model... first through an encoder, then through a decoder.
+
+        output = model(normalize(images))
+        rebuilt_images = model_clean_image_generator(output)
+        loss2 = self.YourCriterion(rebuilt_images, images)
+        #and add your loss into the total loss. 
+        '''
+
         prompted_images = self.prompter(normalize(images))
         output= multiGPU_CLIP_NP( self.model, prompted_images, text)
         output_ori= multiGPU_CLIP_NP( self.model_ori, prompted_images, text)
@@ -288,7 +306,7 @@ class myLightningModule(LightningModule):
         
 
         if self.args.last_num_ft == -1:
-            optimizer = torch.optim.SGD(self.model.module.visual.parameters(),
+            optimizer = torch.optim.SGD(self.model.module.visual.parameters(), # remember to add the parameters of your model decoder into this line!! 
                                         lr=self.args.learning_rate,
                                         momentum=self.args.momentum,
                                         weight_decay=self.args.weight_decay)
