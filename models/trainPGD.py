@@ -227,6 +227,11 @@ class myLightningModule(LightningModule):
         prompted_Dirtyimages = self.prompter(normalize(Dirtyimages)) #does nothing - its a null prompter
         output_of_training_model_with_dirty_images= multiGPU_CLIP_NP( self.model, prompted_Dirtyimages, text)
         output_of_pretrained_model_with_dirty_images= multiGPU_CLIP_NP( self.model_ori, prompted_Dirtyimages, text)
+        '''
+        we would assume if the attack is successful, the model would be more confident in the wrong class, so we can do the following check:
+        Loss_to_see_attack_success = self.CrossEntropy_loss(output_of_training_model_with_dirty_images, torch.arange(images.size(0), device=self.device))
+
+        '''
         output_of_training_model_with_clean_images = multiGPU_CLIP_NP( self.model, prompted_clean_images, text)
         #This loss stops the divergence of the model from the pretrained model.
         loss_between_our_training_model_and_pretrained_on_dirty_images = self.criterion_kl(F.log_softmax(output_of_training_model_with_dirty_images, dim=1), F.softmax(output_of_pretrained_model_with_dirty_images, dim=1))
@@ -240,10 +245,30 @@ class myLightningModule(LightningModule):
         self.model.module.logit_scale.data = torch.clamp(self.model.module.logit_scale.data, 0, 4.6052)
 
         self.log('train_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        #if doing linear regression probes, you may want to have a line like 
+        # self.results.append({"imfeatures":self.model(cleanimages), "dirtyfeatures":self.model(attackedImages),"classes":batch[2],"originalmodel":self.orimodel(cleanimages),"dirtyoriginalmodel":self.orimodel(attackedImages)})
         return loss
    
 
     def on_train_epoch_end(self):
+        '''
+        imfeatures=torch.nan_to_num(torch.cat([val["imfeatures"] for val in self.results],dim=0)).cpu().numpy()
+        #repeat for each output. 
+        
+        #you can then run a linear regression probe to see how well the model is doing.
+        
+        #What this tells you is not just "whether the attack works" - we know the attack works!
+        #  It tells you instead that the attack is fooling the entire image encoder, not just the relation to the text prompts. the text prompts rely on a template. the template looks like "a photo of ...". you could attack it by making it think its "a cartoon of...".
+        #
+        
+        #draw lots of graphs and stuff.
+        
+        labels=torch.cat([val["classes"] for val in self.results],dim=0).cpu().numpy()
+        if not hasattr(self,"Iclassifier"):
+            self.Iclassifier = LogisticRegression(random_state=0, C=0.316, max_iter=1000, verbose=1, n_jobs=-1)
+        self.Iclassifier.fit(imfeatures, labels)
+        self.log( "ImProbe",self.Iclassifier.score(imfeatures, labels))
+        '''
         l2_norm_obj = sum(p.norm(2) for p in self.model.module.visual.parameters())
         l2_norm_ori = sum(p.norm(2) for p in self.model_ori.module.visual.parameters())
         ratio = abs(l2_norm_ori - l2_norm_obj) / float(l2_norm_ori)
