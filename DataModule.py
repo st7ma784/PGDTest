@@ -24,7 +24,7 @@ from torchvision.datasets import CIFAR10, CIFAR100, ImageFolder
 from torchvision.datasets.folder import default_loader
 from PIL import Image
 from typing import List
-from utils import to_rgb,refine_classname
+from utils import to_rgb,refine_classname,load_imagenet_label2folder
 
 
 import torchvision.transforms as transforms
@@ -133,24 +133,14 @@ class MyDataModule(pl.LightningDataModule):
         self.imagenet_root = imagenet_root
         self.tinyimagenet_root = tinyimagenet_root
         self.datasetname = dataset
-        self.val_dataset_names = val_dataset_names
+        val_dataset_name = ['cifar10', 'cifar100', 'STL10', 'SUN397', 'Food101',
+                                'oxfordpet', 'flowers102', 'dtd', 'EuroSAT', 'fgvc_aircraft',
+                                'tinyImageNet', 'ImageNet', 'Caltech101', 'Caltech256', 'StanfordCars', 'PCAM']
+        self.val_dataset_names = val_dataset_names if val_dataset_names is not None else val_dataset_name
         self.batch_size = batch_size
         self.template = 'This is a photo of a {}'
     
-        # imagenet_root = '/data/wangsibo/ImageNet'
-        # tinyimagenet_root = '/data/wangsibo/tinyImageNet/tiny-imagenet-200'
-        # imgnet_full = imagenet_root
-
-        if args.evaluate:
-            val_dataset_name = ['cifar10', 'cifar100', 'STL10', 'SUN397', 'Food101',
-                                'oxfordpet', 'flowers102', 'dtd', 'EuroSAT', 'fgvc_aircraft',
-                                'tinyImageNet', 'ImageNet', 'Caltech101', 'Caltech256', 'StanfordCars', 'PCAM']
-
-        else:
-            val_dataset_name = ['cifar10', 'cifar100', 'STL10', 'SUN397', 'Food101',
-                                'oxfordpet', 'flowers102', 'dtd', 'EuroSAT', 'fgvc_aircraft',
-                                'tinyImageNet', 'ImageNet', 'Caltech101', 'Caltech256', 'StanfordCars', 'PCAM']
-
+        
     def prepare_data(self):
         # No preparation needed
         
