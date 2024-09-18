@@ -55,6 +55,13 @@ class myLightningModule(LightningModule):
         self.model_text, _= None, None
         self.prompter = NullPrompter()
         self.add_prompter = TokenPrompter(add_prompt_len)
+        '''
+        To be implemented: place into the token prompter the POS embedding takedn straight fom CLIP, might make the training much faster! , or even try initiialising from random noise properly! 
+        (Note, they have several different prompters in the model.prompters.py file, you can use them as a reference)
+        
+        
+        
+        '''
         self.criterion = torch.nn.CrossEntropyLoss()
         self.criterion_kl = nn.KLDivLoss(reduction="sum")
         '''
@@ -206,8 +213,8 @@ class myLightningModule(LightningModule):
         #The batch is collated for you, so just seperate it here and calculate loss. 
         #By default, PTL handles optimization and scheduling and logging steps. so All you have to focus on is functionality. Here's an example...
         images, text, target = batch
-        prompted_clean_images = self.prompter(images)
-        images=self.attack(images, target, text, self.args.alpha, self.args.attack_iters, epsilon=self.args.train_eps)
+        prompted_clean_images = self.prompter(images) #does nothing - its a null prompter
+        Dirtyimages=self.attack(images, target, text, self.args.alpha, self.args.attack_iters, epsilon=self.args.train_eps)
         '''
         Here's where you run the dirty image through your model... first through an encoder, then through a decoder.
 
@@ -217,14 +224,18 @@ class myLightningModule(LightningModule):
         #and add your loss into the total loss. 
         '''
 
-        prompted_images = self.prompter(normalize(images))
-        output= multiGPU_CLIP_NP( self.model, prompted_images, text)
-        output_ori= multiGPU_CLIP_NP( self.model_ori, prompted_images, text)
-        output_clean = multiGPU_CLIP_NP( self.model, prompted_clean_images, text)
-
-        loss_advori = self.criterion_kl(F.log_softmax(output, dim=1), F.softmax(output_ori, dim=1))
-        loss_advclean = self.criterion_kl(F.log_softmax(output, dim=1), F.softmax(output_clean, dim=1))
-        loss = self.criterion(output, target) + loss_advclean + loss_advori
+        prompted_Dirtyimages = self.prompter(normalize(Dirtyimages)) #does nothing - its a null prompter
+        output_of_training_model_with_dirty_images= multiGPU_CLIP_NP( self.model, prompted_Dirtyimages, text)
+        output_of_pretrained_model_with_dirty_images= multiGPU_CLIP_NP( self.model_ori, prompted_Dirtyimages, text)
+        output_of_training_model_with_clean_images = multiGPU_CLIP_NP( self.model, prompted_clean_images, text)
+        #This loss stops the divergence of the model from the pretrained model.
+        loss_between_our_training_model_and_pretrained_on_dirty_images = self.criterion_kl(F.log_softmax(output_of_training_model_with_dirty_images, dim=1), F.softmax(output_of_pretrained_model_with_dirty_images, dim=1))
+        
+        #This loss stops the divergence of the model from the clean images.
+        loss_between_dirty_and_clean_images_on_training_model = self.criterion_kl(F.log_softmax(output_of_training_model_with_dirty_images, dim=1), F.softmax(output_of_training_model_with_clean_images, dim=1))
+        
+        #the final criterion is the loss of the model on the dirty images, towards the target.
+        loss = self.criterion(output_of_training_model_with_dirty_images, target) + loss_between_dirty_and_clean_images_on_training_model + loss_between_our_training_model_and_pretrained_on_dirty_images
         
         self.model.module.logit_scale.data = torch.clamp(self.model.module.logit_scale.data, 0, 4.6052)
 
