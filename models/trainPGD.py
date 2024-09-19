@@ -220,7 +220,7 @@ class myLightningModule(LightningModule):
     def training_step(self, batch, batch_idx):
         #The batch is collated for you, so just seperate it here and calculate loss. 
         #By default, PTL handles optimization and scheduling and logging steps. so All you have to focus on is functionality. Here's an example...
-        input, label,text = batch #label shouldnt be used here! 
+        images, target,text = batch #label shouldnt be used here! 
         prompted_clean_images = self.prompter(images) #does nothing - its a null prompter
         Dirtyimages=self.attack(images, target, text, self.args.alpha, self.args.attack_iters, epsilon=self.args.train_eps)
         '''
@@ -302,12 +302,10 @@ class myLightningModule(LightningModule):
         self.log('abs_l2', abs_l2, on_step=False, on_epoch=True, prog_bar=True, logger=True)
       
     def validation_step(self, batch, batch_idx, *args, **kwargs):
-        image,label = batch
+        images, target,text = batch
         #a is the image, b is the target
         #get the datamodule text list to lookup the text embeddings.s
-        print(a.shape)
-        print(b.shape)
-        print(a)
+     
         prompt_token = None
         output_prompt= multiGPU_CLIP_NP(self.model, self.prompter(images), text)
 
