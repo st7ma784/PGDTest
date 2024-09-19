@@ -79,15 +79,15 @@ def wandbtrain(config=None,dir=None,devices=None,accelerator=None,Dataset=None):
     if config is not None:
         config=config.__dict__
         dir=config.get("dir",dir)
-        logtool= pytorch_lightning.loggers.WandbLogger( project="TestDeploy",entity="st7ma784", save_dir=dir)
+        logtool= pytorch_lightning.loggers.WandbLogger( project="TestDeploy",entity="st7ma784", save_dir=dir)                               #<-----CHANGE ME
         print(config)
 
     else:
         #We've got no config, so we'll just use the default, and hopefully a trainAgent has been passed
         import wandb
         print("Would recommend changing projectname according to config flags if major version swithching happens")
-        run=wandb.init(project="TestDeploy",entity="st7ma784",name="TestDeploy",config=config)
-        logtool= pytorch_lightning.loggers.WandbLogger( project="TestDeploy",entity="st7ma784",experiment=run, save_dir=dir)
+        run=wandb.init(project="TestDeploy",entity="st7ma784",name="TestDeploy",config=config)                                           #<-----CHANGE ME        
+        logtool= pytorch_lightning.loggers.WandbLogger( project="TestDeploy",entity="st7ma784",experiment=run, save_dir=dir)                 #<-----CHANGE ME
         config=run.config.as_dict()
 
     train(config,dir,devices,accelerator,Dataset,logtool)
@@ -104,7 +104,7 @@ def SlurmRun(trialconfig):
         '#SBATCH --gres=gpu:1',  #{}'.format(per_experiment_nb_gpus),
         f'#SBATCH --signal=USR1@{5 * 60}',
         '#SBATCH --mail-type={}'.format(','.join(['END','FAIL'])),
-        '#SBATCH --mail-user={}'.format('YOURMAIL@gmail.com'),
+        '#SBATCH --mail-user={}'.format('YOURMAIL@gmail.com'),                                                                                   #<-----CHANGE ME
     ]
     comm="python"
     slurm_commands={}
@@ -112,18 +112,18 @@ def SlurmRun(trialconfig):
     if str(os.getenv("HOSTNAME","localhost")).endswith("bede.dur.ac.uk"):
         sub_commands.extend([
                 '#SBATCH --account MYACOCUNT',
-                'export CONDADIR=/nobackup/projects/<BEDEPROJECT>/$USER/miniconda',
+                'export CONDADIR=/nobackup/projects/<BEDEPROJECT>/$USER/miniconda',                                                         #<-----CHANGE ME                                                    
                 'export NCCL_SOCKET_IFNAME=ib0'])
         comm="python3"
     else:
 
         sub_commands.extend(['#SBATCH -p gpu-medium',
-                             'export CONDADIR=/storage/hpc/46/manders3/conda4/open-ce',
+                             'export CONDADIR=/storage/hpc/46/manders3/conda4/open-ce',                                                     #<-----CHANGE ME
                              'export NCCL_SOCKET_IFNAME=enp0s31f6',])
     sub_commands.extend([ '#SBATCH --{}={}\n'.format(cmd, value) for  (cmd, value) in slurm_commands.items()])
     sub_commands.extend([
         'export SLURM_NNODES=$SLURM_JOB_NUM_NODES',
-        'export wandb=9cf7e97e2460c18a89429deed624ec1cbfb537bc',
+        'export wandb=9cf7e97e2460c18a89429deed624ec1cbfb537bc',                                                                               #<-----CHANGE ME                                         
         'source /etc/profile',
         'module add opence',
         'conda activate $CONDADIR',# ...and activate the conda environment
