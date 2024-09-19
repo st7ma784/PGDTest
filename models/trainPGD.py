@@ -220,7 +220,7 @@ class myLightningModule(LightningModule):
     def training_step(self, batch, batch_idx):
         #The batch is collated for you, so just seperate it here and calculate loss. 
         #By default, PTL handles optimization and scheduling and logging steps. so All you have to focus on is functionality. Here's an example...
-        images, text, target = batch
+        input, label,text = batch #label shouldnt be used here! 
         prompted_clean_images = self.prompter(images) #does nothing - its a null prompter
         Dirtyimages=self.attack(images, target, text, self.args.alpha, self.args.attack_iters, epsilon=self.args.train_eps)
         '''
@@ -256,7 +256,13 @@ class myLightningModule(LightningModule):
           (something to try by adding arguments to the demoparse.py file, then setting in the lightning module init.)
         
         '''
-        loss_on_training_model_with_dirty_images = self.criterion(output_of_training_model_with_dirty_images, target)
+
+        '''
+        URGENT TODO:
+        The following line SHOULD BE TORCH ARANGE!!!!! 
+        I cannot stress this enough! you should REALLY fix this and try both when you validate results! 
+        '''
+        loss_on_training_model_with_dirty_images = self.criterion(output_of_training_model_with_dirty_images, target) # torch.arange(images.size(0), device=self.device)
         loss=loss_on_training_model_with_dirty_images + loss_between_dirty_and_clean_images_on_training_model + loss_between_our_training_model_and_pretrained_on_dirty_images
         
         self.model.module.logit_scale.data = torch.clamp(self.model.module.logit_scale.data, 0, 4.6052)
@@ -295,9 +301,13 @@ class myLightningModule(LightningModule):
         self.log('ratio', ratio, on_step=False, on_epoch=True, prog_bar=True, logger=True)
         self.log('abs_l2', abs_l2, on_step=False, on_epoch=True, prog_bar=True, logger=True)
       
-    def validation_step(self, batch, batch_idx):
-      
-        images,text,target=batch
+    def validation_step(self, batch, batch_idx, *args, **kwargs):
+        image,label = batch
+        #a is the image, b is the target
+        #get the datamodule text list to lookup the text embeddings.s
+        print(a.shape)
+        print(b.shape)
+        print(a)
         prompt_token = None
         output_prompt= multiGPU_CLIP_NP(self.model, self.prompter(images), text)
 
@@ -330,7 +340,7 @@ class myLightningModule(LightningModule):
                                                     self.prompter(clip_img_preprocessing(images + delta_prompt)),
                                                     text, prompt_token)
 
-        loss = self.criterion(output_prompt_adv, target)
+        loss = self.criterion(output_prompt_adv, target) #shoudl be torch arange(images.size(0), device=self.device)
 
         # bl attack
         torch.cuda.empty_cache()

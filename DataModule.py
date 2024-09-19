@@ -130,6 +130,22 @@ class CustomImageNetDataset(Dataset):
 
         return image, label
 
+
+#write a custom torchvision dataset class, we want to add a get_item that looks up the label in the text list and returns the image, label, and text
+class CustomtorchVisionDataset2(Dataset):
+    def __init__(self, dataset, texts):
+        self.dataset = dataset
+        self.texts = texts
+        self.tokenizer=AutoTokenizer.from_pretrained("clip-vit-base-patch32")
+    def __len__(self):
+        return len(self.dataset)
+
+    def __getitem__(self, idx):
+        image, label = self.dataset[idx]
+        text = self.texts[label]
+        text = self.tokenizer(text, return_tensors="pt", padding="max_length", max_length=77, truncation=True)
+        return image, label, text
+
 class MyDataModule(pl.LightningDataModule):
     def __init__(self,Cache_dir, dataset: str,batch_size: int,imagenet_root: str="none", tinyimagenet_root: str="none",  val_dataset_names: List[str]=None,**kwargs):
         super().__init__()
@@ -175,6 +191,9 @@ class MyDataModule(pl.LightningDataModule):
 
             class_names = new_class_names
         texts_train = [self.template.format(label) for label in class_names]
+        self.train_texts = texts_train
+        self.dataset= CustomtorchVisionDataset2(self.dataset, texts_train)
+
 
     def setup(self, stage=None):
         if stage == 'fit' or stage is None:
@@ -275,6 +294,8 @@ class MyDataModule(pl.LightningDataModule):
                 texts_list.append(texts_tmp)
             self.val_datasets = [each for each in val_dataset_dict.values()]
             self.val_texts = texts_list
+            self.val_datasets= [CustomtorchVisionDataset2(dataset, texts) for dataset, texts in zip(self.val_datasets, self.val_texts)]
+
 
     def train_dataloader(self):
         return DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True, num_workers=4, pin_memory=True)
