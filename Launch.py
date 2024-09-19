@@ -126,7 +126,8 @@ def SlurmRun(trialconfig):
         'export wandb=9cf7e97e2460c18a89429deed624ec1cbfb537bc',                                                                               #<-----CHANGE ME                                         
         'source /etc/profile',
         'module add opence',
-        'conda activate $CONDADIR',# ...and activate the conda environment
+        'conda activate $CONDADIR',
+        'pip install -r requirements.txt',                                                   # ...and activate the conda environment
     ])
     script_name= os.path.realpath(sys.argv[0]) #Find this scripts name...
     trialArgs=__get_hopt_params(trialconfig)
