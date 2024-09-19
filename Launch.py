@@ -198,6 +198,8 @@ if __name__ == '__main__':
         #means we've been launched from a BEDE script, so use config given in args///
         wandbtrain(hyperparams)
 
+
+    #LEts pretend stephen fixed something
     #OR To run with Default Args
     else:
         trials=hyperparams.generate_trials(NumTrials)
