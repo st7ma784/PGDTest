@@ -76,6 +76,8 @@ Previous literature has pointed to using PGN attacks as an effective way to fool
 
 For traditional frameworks this is effective because the whole framework is designed against the shape of input and output distributions. However, CLIP, and other autoEncoders, do not perform the same classification approaches as traditional CV networks. Instead, CLIP generates a robust embedding, which is designed to match a potential caption. This means that there are not the same labels to target with PGNs. 
 
+(possible find other work about penultimate layers of CLIP)
+
 ## Method 
 In our work we evaluate how effective PGNs are at attacking CLIP by replicating prior work. However, we hypothesise that using linear regression probes on CLIPs output will restore performance. This would be significant because it would show whether unsupervised learning is prone to PGNs, or simply just the labels are. 
 
@@ -83,7 +85,7 @@ The following graphs show our hyposthesis....
 
 From these graphs, we can see that PGNs that disrupt the labels of CLIP do not actually challenge CLIP's ability to understand and cluster inputs, and over a large enough sample space, the clusters between clean and attacked images are likely to be homogenous. 
 
-To show the difference between these approaches, we insert linear regression probes after CLIP inference. The expectations of which is as follows :
+To show the difference between the outcomes, we insert linear regression probes after CLIP inference. The expectations of which is as follows :
 
 These graphs show that a. the stock clip remains unchanged throughout training
                        b. the stock clip is increasingly vulnerable to the attacked images. 
