@@ -13,13 +13,12 @@ def train(config={
     import pytorch_lightning
     from pytorch_lightning.callbacks import TQDMProgressBar,EarlyStopping
     import datetime
-    from pytorch_lightning.strategies import FSDPStrategy
     from pytorch_lightning.plugins.environments import SLURMEnvironment
 
     #### EDIT HERE FOR DIFFERENT VERSIONS OF A MODEL
-    from models.train import myLightningModule
+    from models.trainPGD import myLightningModule
 
-    model=myLightningModule(config)
+    model=myLightningModule(**config)
     if dir is None:
         dir=config.get("dir",".")
     if Dataset is None:

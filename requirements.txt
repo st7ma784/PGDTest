@@ -8,7 +8,7 @@ matplotlib
 torch_cka
 test_tube
 pycocotools
-autoattack
+torchattacks
 einops
 folder
 h5py
@@ -19,4 +19,5 @@ Pillow
 pycountry
 scipy
 tqdm
-vision
+torchvision
+gdown

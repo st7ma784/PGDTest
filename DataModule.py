@@ -131,15 +131,15 @@ class CustomImageNetDataset(Dataset):
         return image, label
 
 class MyDataModule(pl.LightningDataModule):
-    def __init__(self, imagenet_root: str, tinyimagenet_root: str, dataset: str, val_dataset_names: List[str], batch_size: int):
+    def __init__(self,Cache_dir, dataset: str,batch_size: int,imagenet_root: str="none", tinyimagenet_root: str="none",  val_dataset_names: List[str]=None,**kwargs):
         super().__init__()
+        self.cache_dir = Cache_dir
         self.imagenet_root = imagenet_root
         self.tinyimagenet_root = tinyimagenet_root
         self.datasetname = dataset
-        val_dataset_name = ['cifar10', 'cifar100', 'STL10', 'SUN397', 'Food101',
+        self.val_dataset_names = val_dataset_names if val_dataset_names is not None else ['cifar10', 'cifar100', 'STL10', 'SUN397', 'Food101',
                                 'oxfordpet', 'flowers102', 'dtd', 'EuroSAT', 'fgvc_aircraft',
                                 'tinyImageNet', 'ImageNet', 'Caltech101', 'Caltech256', 'StanfordCars', 'PCAM']
-        self.val_dataset_names = val_dataset_names if val_dataset_names is not None else val_dataset_name
         self.batch_size = batch_size
         self.template = 'This is a photo of a {}'
     
@@ -179,7 +179,7 @@ class MyDataModule(pl.LightningDataModule):
     def setup(self, stage=None):
         if stage == 'fit' or stage is None:
             self.train_dataset = self.dataset
-            self.val_datasets = self.load_val_datasets()
+            # self.val_datasets = self.load_val_datasets()
 
             val_dataset_list = []
         
@@ -189,10 +189,10 @@ class MyDataModule(pl.LightningDataModule):
                 val_dataset_list.append(CIFAR100(root=self.imagenet_root, transform=preprocess,download=True, train=False))
             if 'Caltech101'in self.val_dataset_names:
                     val_dataset_list.append(Caltech101(root=self.imagenet_root, target_type='category', transform=preprocess224,
-                                                        download=False))
+                                                        download=True))
             if 'PCAM' in self.val_dataset_names:
                     val_dataset_list.append(PCAM(root=self.imagenet_root, split='test', transform=preprocess224,
-                                                    download=False))
+                                                    download=True))
             if 'STL10' in self.val_dataset_names:
                     val_dataset_list.append(STL10(root=self.imagenet_root, split='test',
                                                     transform=preprocess, download=True))
@@ -201,7 +201,7 @@ class MyDataModule(pl.LightningDataModule):
                                                     transform=preprocess224, download=True))
             if 'StanfordCars' in self.val_dataset_names:
                     val_dataset_list.append(StanfordCars(root=self.imagenet_root, split='test',
-                                                            transform=preprocess224, download=False))
+                                                            transform=preprocess224, download=True))
             if 'Food101' in self.val_dataset_names: 
                     val_dataset_list.append(Food101(root=self.imagenet_root, split='test',
                                                     transform=preprocess224, download=True))
@@ -213,7 +213,7 @@ class MyDataModule(pl.LightningDataModule):
                                                     transform=preprocess224, download=True))
             if 'Caltech256' in self.val_dataset_names:
                     val_dataset_list.append(Caltech256(root=self.imagenet_root, transform=preprocess224,
-                                                        download=False))
+                                                        download=True))
             if 'flowers102' in self.val_dataset_names:
                     val_dataset_list.append(Flowers102(root=self.imagenet_root, split='test',
                                                         transform=preprocess224, download=True))

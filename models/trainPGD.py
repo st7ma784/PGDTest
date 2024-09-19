@@ -10,7 +10,7 @@ from utils import accuracy,clamp,normalize
 import torch.nn.functional as F
 from clip import clip
 from models.prompters import TokenPrompter, NullPrompter
-from autoattack import AutoAttack
+from torchattacks import AutoAttack
 from utils import clip_img_preprocessing
 
 
@@ -41,17 +41,17 @@ class myLightningModule(LightningModule):
     '''
     
     def __init__(self,
-                args,
+                **args,
                 ):
 
         super().__init__()
         self.save_hyperparameters()
         self.loss=torch.nn.CrossEntropyLoss()
         self.args = args
-        add_prompt_len = 0 if args.add_prompt == 'none' else 1
+        add_prompt_len = 0 if args.get("add_prompt","none") == 'none' else 1
         self.upper_limit, self.lower_limit = 1, 0
-        self.model, _ = clip.load('ViT-B/32', device=self.device, jit=False, prompt_len=add_prompt_len)
-        self.model_ori, _ = clip.load('ViT-B/32', device=self.device, jit=False, prompt_len=add_prompt_len)
+        self.model, _ = clip.load('ViT-B/32', device=self.device, jit=False)
+        self.model_ori, _ = clip.load('ViT-B/32', device=self.device, jit=False)
         self.model_text, _= None, None
         self.prompter = NullPrompter()
         self.add_prompter = TokenPrompter(add_prompt_len)
@@ -74,15 +74,15 @@ class myLightningModule(LightningModule):
         self.YourCriterion = nn.CrossEntropyLoss() ? maybe MSE? but I suspect you actually might want DICE loss/ 
         
         '''
-        if args.norm=='l_inf':
+        if args.get("norm",'l_inf')=='l_inf':
             self.init_delta=self.init_uniform
             self.clamp=self.clamp_inf
-        elif args.norm=='l_2':
+        elif  args.get("norm",'l_inf')=='l_2':
             self.init_delta=self.init_normal
             self.clamp=self.clamp_2
         else:
             raise ValueError
-        if not args.Noattack:
+        if not args.get("noAttack",True):
             self.attack=self.no_attack
 
     def init_uniform(self, X,eps):

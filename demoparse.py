@@ -74,7 +74,7 @@ class baseparser(HyperOptArgumentParser):
             return arg
         
         '''
-        self.opt_list("--print_freq", default=20, type=int, tunable=False)
+   
         self.opt_list("--save_freq", default=50, type=int, tunable=False)
         self.opt_list("--test_freq", default=3, type=int, tunable=False)
         self.opt_list("--batch_size", default=256, type=int, tunable=False)
@@ -91,9 +91,10 @@ class baseparser(HyperOptArgumentParser):
         self.opt_list("--test_numsteps", default=10, type=int, tunable=False)
         self.opt_list("--test_stepsize", default=1, type=int, tunable=False)
         self.opt_list("--earlystop", default=1000, type=int, tunable=False)
+        self.opt_list("--precision", default=32, type=int, tunable=False)
         # model
         self.opt_list("--model", default='clip', type=str, tunable=False)
-        self.opt_list("--imagenet_root", default=None, type=str, tunable=False)
+        self.opt_list("--imagenet_root", default='./data', type=str, tunable=False)
         self.opt_list("--arch", default='vit_b32', type=str, tunable=False)
         self.opt_list("--method", default='null_patch', type=str, options=['null_patch'], tunable=False)
         self.opt_list("--name", default='', type=str, tunable=False)
@@ -110,7 +111,6 @@ class baseparser(HyperOptArgumentParser):
         self.opt_list("--trial", default=1, type=int, tunable=False)
         self.opt_list("--resume", default=None, type=str, tunable=False)
         self.opt_list("--evaluate", default=False, action="store_true", tunable=False)
-        self.opt_list("--gpu", default=None, type=int, tunable=False)
         self.opt_list("--debug", action='store_true', tunable=False)
         self.opt_list("--Noattack", action='store_true', tunable=False)
         self.opt_list("--CW", action='store_true', tunable=False)
@@ -118,18 +118,13 @@ class baseparser(HyperOptArgumentParser):
         self.opt_list("--last_num_ft", default=-1, type=int, tunable=False)
         self.opt_list("--noimginprop", action='store_true', tunable=False)
         self.opt_list("--autoattack", action='store_true', tunable=False)
-        self.file_name = '{}_{}_{}_{}_{}_{}_lr_{}_decay_{}_bsz_{}_warmup_{}_trial_{}_addp_{}'.format(self.name, self.method, self.prompt_size, self.dataset, self.model, self.arch, self.learning_rate, self.weight_decay, self.batch_size, self.warmup, self.trial, self.add_prompt_size)
-
-        self.opt_list("--accelerator", default='gpu', type=str, options=['gpu'], tunable=False)
         self.opt_list("--num_trials", default=0, type=int, tunable=False)
+        self.argNames=["name","method","prompt_size","dataset","model","arch","learning_rate","weight_decay","batch_size","warmup","trial","add_prompt_size"]
         #self.opt_range('--neurons', default=50, type=int, tunable=True, low=100, high=800, nb_samples=8, log_base=None)
         
         #This is important when passing arguments as **config in launcher
         self.keys_of_interest=set()
-        self.argNames = [i for i in self.__dict__.keys() if i not in ['argNames','keys_of_interest','run_configs']]
-        
-    def __dict__(self):
-        return {k:self.parse_args().__dict__[k] for k in self.argNames}
+
 
 import wandb
 from tqdm import tqdm

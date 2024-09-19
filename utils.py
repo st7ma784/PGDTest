@@ -16,6 +16,16 @@ def convert_models_to_fp32(model):
         if p.grad:
             p.grad.data = p.grad.data.float()
 
+ImageNet_MEAN = (0.485, 0.456, 0.406)
+ImageNet_STD = (0.229, 0.224, 0.225)
+
+mu_img = torch.tensor(ImageNet_MEAN).view(3, 1, 1).cuda()
+std_img = torch.tensor(ImageNet_STD).view(3, 1, 1).cuda()
+
+
+def normalize(X):
+    return (X - mu_img) / std_img
+
 
 def refine_classname(class_names):
     for i, class_name in enumerate(class_names):
@@ -323,3 +333,10 @@ class CustomImageNetDataset(Dataset):
             image = self.transform(image)
 
         return image, label
+
+def clip_img_preprocessing(X):
+    img_size = 224
+    X = torch.nn.functional.upsample(X, size=(img_size, img_size), mode='bicubic')
+    X = normalize(X)
+
+    return X
