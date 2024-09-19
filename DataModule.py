@@ -199,9 +199,9 @@ class MyDataModule(pl.LightningDataModule):
             if 'SUN397' in self.val_dataset_names:
                     val_dataset_list.append(SUN397(root=self.imagenet_root,
                                                     transform=preprocess224, download=True))
-            if 'StanfordCars' in self.val_dataset_names:
-                    val_dataset_list.append(StanfordCars(root=self.imagenet_root, split='test',
-                                                            transform=preprocess224, download=True))
+            # if 'StanfordCars' in self.val_dataset_names:                                                   #no longer available for download
+            #         val_dataset_list.append(StanfordCars(root=self.imagenet_root, split='test',
+            #                                                 transform=preprocess224, download=True))
             if 'Food101' in self.val_dataset_names: 
                     val_dataset_list.append(Food101(root=self.imagenet_root, split='test',
                                                     transform=preprocess224, download=True))
