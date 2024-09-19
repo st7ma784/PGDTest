@@ -101,7 +101,7 @@ class baseparser(HyperOptArgumentParser):
         self.opt_list("--add_prompt_size", default=0, type=int, tunable=False)
         # dataset
         self.opt_list("--root", default='./data', type=str, tunable=False)
-        self.opt_list("--dataset", default='cifar100', type=str, tunable=False)
+        self.opt_list("--dataset", default='cifar100', options=["ImageNet","tinyImageNet"],type=str, tunable=False)
         self.opt_list("--image_size", default=224, type=int, tunable=False)
         # other
         self.opt_list("--seed", default=0, type=int, tunable=False)

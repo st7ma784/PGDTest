@@ -352,16 +352,16 @@ class myLightningModule(LightningModule):
         # https://pytorch.org/docs/stable/optim.html#torch.optim.AdamW
         # https://pytorch-lightning.readthedocs.io/en/latest/common/optimizers.html
 
-        optimizer = torch.optim.SGD(list(self.model.module.visual.parameters())[-self.args.last_num_ft:],
-                                        lr=self.args.learning_rate,
-                                        momentum=self.args.momentum,
-                                        weight_decay=self.args.weight_decay)
+        optimizer = torch.optim.SGD(list(self.model.visual.parameters()),
+                                        lr=self.args.get("learning_rate",1e-5),
+                                        momentum=self.args.get("momentum",0.99),
+                                        weight_decay=self.args.get("weight_decay",0))
         
 
-        if self.args.last_num_ft == -1:
-            optimizer = torch.optim.SGD(self.model.module.visual.parameters(), # remember to add the parameters of your model decoder into this line!! 
-                                        lr=self.args.learning_rate,
-                                        momentum=self.args.momentum,
-                                        weight_decay=self.args.weight_decay)
-        scheduler = cosine_lr(optimizer, self.args.learning_rate, self.args.warmup, self.args.total_steps)
-        return [optimizer,scheduler]
+        if self.args.get("last_num_ft",-1) != -1:
+            optimizer = torch.optim.SGD(self.model.visual.parameters()[-self.args.last_num_ft:], # remember to add the parameters of your model decoder into this line!! 
+                                        lr=self.args.get("learning_rate",1e-5),
+                                        momentum=self.args.get("momentum",0.99),
+                                        weight_decay=self.args.get("weight_decay",0))
+        #scheduler = cosine_lr(optimizer, self.args.get("learning_rate",1e-5), self.args.get("warmup",1000), self.args.get("total_steps",100000))
+        return optimizer#([optimizer],[scheduler])
