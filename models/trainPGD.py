@@ -295,8 +295,8 @@ class myLightningModule(LightningModule):
 
     def on_train_epoch_end(self):
 
-        l2_norm_obj = sum(p.norm(2) for p in self.model.module.visual.parameters())
-        l2_norm_ori = sum(p.norm(2) for p in self.model_ori.module.visual.parameters())
+        l2_norm_obj = sum(p.norm(2) for p in self.model.visual.parameters())
+        l2_norm_ori = sum(p.norm(2) for p in self.model_ori.visual.parameters())
         ratio = abs(l2_norm_ori - l2_norm_obj) / float(l2_norm_ori)
         abs_l2 = abs(l2_norm_ori - l2_norm_obj)
         self.log('l2_norm_obj', l2_norm_obj, on_step=False, on_epoch=True, prog_bar=True, logger=True)
@@ -308,7 +308,7 @@ class myLightningModule(LightningModule):
         self.mu_img = torch.tensor((0.485, 0.456, 0.406)).view(3,1,1).to(self.device)
         self.std_img = torch.tensor((0.229, 0.224, 0.225)).view(3,1,1).to(self.device)
         self.cleanresults=[]
-        self.atatckedresults=[]
+        self.attackedresults=[]
     def validation_step(self, batch, batch_idx, *args, **kwargs):
         images, target,text = batch
         #a is the image, b is the target
@@ -322,7 +322,7 @@ class myLightningModule(LightningModule):
 
         # measure accuracy and record loss
         acc1 = accuracy(output_prompt, torch.arange(images.shape[0],device=images.device), topk=(1,))
-        self.log('val_clean_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        self.log('val_clean_loss', loss.detach(), on_step=True, on_epoch=True, prog_bar=True, logger=True)
         self.log('val_clean_acc', acc1[0].item(), on_step=True, on_epoch=True, prog_bar=True, logger=True)
 
         if self.args.get("CW",False):
@@ -348,7 +348,7 @@ class myLightningModule(LightningModule):
                                                     text) #prommpt token is not used here.maybe should be?
 
         loss = self.criterion(output_prompt_adv, torch.arange(images.size(0),device=images.device)) #shoudl be torch arange(images.size(0), device=self.device)
-        self.atatckedresults.append({"logits":output_prompt_adv, "labels":torch.arange(images.size(0), device=self.device)})
+        self.attackedresults.append({"logits":output_prompt_adv, "labels":torch.arange(images.size(0), device=self.device)})
         # bl attack
         # torch.cuda.empty_cache()
 
@@ -364,8 +364,8 @@ class myLightningModule(LightningModule):
         
         GoodLogits=torch.nan_to_num(torch.cat([val["logits"] for val in self.cleanresults],dim=0)).cpu().numpy()
         GoodLabels=torch.cat([val["labels"] for val in self.cleanresults],dim=0).cpu().numpy()
-        BadLogits=torch.nan_to_num(torch.cat([val["logits"] for val in self.atatckedresults],dim=0)).cpu().numpy()
-        BadLabels=torch.cat([val["labels"] for val in self.atatckedresults],dim=0).cpu().numpy()
+        BadLogits=torch.nan_to_num(torch.cat([val["logits"] for val in self.attackedresults],dim=0)).cpu().numpy()
+        BadLabels=torch.cat([val["labels"] for val in self.attackedresults],dim=0).cpu().numpy()
 
         if not hasattr(self,"Cleanclassifier"):
             self.Cleanclassifier = LogisticRegression(random_state=0, C=0.316, max_iter=1000, verbose=1, n_jobs=-1)
@@ -389,7 +389,7 @@ class myLightningModule(LightningModule):
         
         #delete the results to save memory
         del self.cleanresults
-        del self.atatckedresults
+        del self.attackedresults
 
          #You could log here the val_loss, or just print something. 
         
