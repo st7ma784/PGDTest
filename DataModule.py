@@ -181,7 +181,8 @@ class MyDataModule(pl.LightningDataModule):
         self.setup(dowload=True)
 
 
-    def setup(self, stage=None,dowload=False):
+    def setup(self, stage=None,download=False):
+
         if stage == 'fit' or stage is None:
             
             if self.datasetname == 'cifar100':
