@@ -63,7 +63,6 @@ def train(config={
             # ),
             callbacks=callbacks,
             gradient_clip_val=0.25,# Not supported for manual optimization
-            fast_dev_run=False,
             precision=p,
             fast_dev_run=config.get("debug",False),
     )
