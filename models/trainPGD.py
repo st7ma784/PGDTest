@@ -12,7 +12,7 @@ from clip import clip
 from models.prompters import TokenPrompter, NullPrompter
 from torchattacks import AutoAttack
 from utils import clip_img_preprocessing
-
+from sklearn.linear_model import LogisticRegression
 
 def multiGPU_CLIP(model, images, text_tokens):
     # prompt_token = prompt_token.repeat(images.size(0), 1, 1)
