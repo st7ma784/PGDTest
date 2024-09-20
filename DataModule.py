@@ -178,7 +178,7 @@ class MyDataModule(pl.LightningDataModule):
         
     def prepare_data(self):
         # No preparation needed
-        self.setup(dowload=True)
+        self.setup(download=True)
 
 
     def setup(self, stage=None,download=False):
