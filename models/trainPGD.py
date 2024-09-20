@@ -359,7 +359,7 @@ class myLightningModule(LightningModule):
         
 
         return loss
-    def validation_epoch_end(self, outputs):
+    def on_validation_epoch_end(self, outputs):
         #make linear probes here, and log the results.
         
         GoodLogits=torch.nan_to_num(torch.cat([val["logits"] for val in self.cleanresults],dim=0)).cpu().numpy()
