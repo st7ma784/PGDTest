@@ -174,7 +174,7 @@ class MyDataModule(pl.LightningDataModule):
                                 'Caltech256', 'PCAM'] #StanfordCars --url; no longer valid. 'EuroSAT' --ssl error 'Caltech101'- md5? 'tinyImageNet', 'ImageNet', 
         self.train_dataset_names = val_dataset_names if val_dataset_names is not None else ['cifar10', 'cifar100', 'STL10', 'SUN397', 'Food101',
                                 'oxfordpet', 'flowers102', 'dtd', 'fgvc_aircraft',
-                                 'Caltech256', 'PCAM']   #'tinyImageNet', 'ImageNet',
+                                 'PCAM']   #'tinyImageNet', 'ImageNet',
         self.batch_size = batch_size
         self.template = 'This is a photo of a {}'
         self.preprocess = preprocess224_interpolate
@@ -204,10 +204,13 @@ class MyDataModule(pl.LightningDataModule):
                 class_names =refine_classname(self.train_dataset_dict['Caltech101'].classes)
                 self.train_text_names_dict.update({'Caltech101':[self.template.format(label) for label in class_names]})
 
-            if 'PCAM' in self.train_dataset_names:
-                self.train_dataset_dict.update({'PCAM': PCAM(root=self.imagenet_root, split='train', transform=self.preprocess, download=download)})
-                class_names =refine_classname(self.train_dataset_dict['PCAM'].classes)
-                self.train_text_names_dict.update({'PCAM':[self.template.format(label) for label in class_names]})
+            # if 'PCAM' in self.train_dataset_names:
+            #     self.train_dataset_dict.update({'PCAM': PCAM(root=self.imagenet_root, split='train', transform=self.preprocess, download=download)})
+            #     print("PCAM")
+            #     print(self.train_dataset_dict['PCAM'].__dir__())
+            #     #get the classes from PCAM dataset. we can not use classes but it does have the attribute 
+
+            #     self.train_text_names_dict.update({'PCAM':[self.template.format(label) for label in class_names]})
             if 'STL10' in self.train_dataset_names:
                 self.train_dataset_dict.update({'STL10': STL10(root=self.imagenet_root, split='train', transform=self.preprocess, download=download)})
                 class_names =refine_classname(self.train_dataset_dict['STL10'].classes)
@@ -221,7 +224,7 @@ class MyDataModule(pl.LightningDataModule):
                 class_names =refine_classname(self.train_dataset_dict['Food101'].classes)
                 self.train_text_names_dict.update({'Food101':[self.template.format(label) for label in class_names]})
             if 'oxfordpet' in self.train_dataset_names:
-                self.train_dataset_dict.update({'oxfordpet': OxfordIIITPet(root=self.imagenet_root, split='train', transform=self.preprocess, download=download)})
+                self.train_dataset_dict.update({'oxfordpet': OxfordIIITPet(root=self.imagenet_root, split='trainval', transform=self.preprocess, download=download)})
                 class_names =refine_classname(self.train_dataset_dict['oxfordpet'].classes)
                 self.train_text_names_dict.update({'oxfordpet':[self.template.format(label) for label in class_names]})
             if 'EuroSAT' in self.train_dataset_names:
@@ -229,13 +232,15 @@ class MyDataModule(pl.LightningDataModule):
                 class_names =refine_classname(self.train_dataset_dict['EuroSAT'].classes)
                 self.train_text_names_dict.update({'EuroSAT':[self.template.format(label) for label in class_names]})
             if 'Caltech256' in self.train_dataset_names:
-                self.train_dataset_dict.update({'Caltech256': Caltech256(root=self.imagenet_root, transform=self.preprocess, download=True)})
-                class_names =refine_classname(self.train_dataset_dict['Caltech256'].classes)
+                self.train_dataset_dict.update({'Caltech256': Caltech256(root=self.imagenet_root, split=["train"],transform=self.preprocess, download=download)})
+                class_names =refine_classname(self.train_dataset_dict['Caltech256'].categories)
                 self.train_text_names_dict.update({'Caltech256':[self.template.format(label) for label in class_names]})
-            if 'flowers102' in self.train_dataset_names:
-                self.train_dataset_dict.update({'flowers102': Flowers102(root=self.imagenet_root, split='train', transform=self.preprocess, download=download)})
-                class_names =refine_classname(self.train_dataset_dict['flowers102'].classes)
-                self.train_text_names_dict.update({'flowers102':[self.template.format(label) for label in class_names]})
+            # if 'flowers102' in self.train_dataset_names:
+            #     self.train_dataset_dict.update({'flowers102': Flowers102(root=self.imagenet_root, split='train', transform=self.preprocess, download=download)})
+            #     print("flowers102")
+            #     print(self.train_dataset_dict['flowers102'].__dir__())
+            #     class_names =refine_classname(self.train_dataset_dict['flowers102'].)
+            #     self.train_text_names_dict.update({'flowers102':[self.template.format(label) for label in class_names]})
             if 'Country211' in self.train_dataset_names:
                 self.train_dataset_dict.update({'Country211': Country211(root=self.imagenet_root, split='train', transform=self.preprocess, download=download)})
                 class_names =refine_classname(self.train_dataset_dict['Country211'].classes)

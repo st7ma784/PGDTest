@@ -294,24 +294,7 @@ class myLightningModule(LightningModule):
    
 
     def on_train_epoch_end(self):
-        '''
-        imfeatures=torch.nan_to_num(torch.cat([val["imfeatures"] for val in self.results],dim=0)).cpu().numpy()
-        #repeat for each output. 
-        
-        #you can then run a linear regression probe to see how well the model is doing.
-        
-        #What this tells you is not just "whether the attack works" - we know the attack works!
-        #  It tells you instead that the attack is fooling the entire image encoder, not just the relation to the text prompts. the text prompts rely on a template. the template looks like "a photo of ...". you could attack it by making it think its "a cartoon of...".
-        #
-        
-        #draw lots of graphs and stuff.
-        
-        labels=torch.cat([val["classes"] for val in self.results],dim=0).cpu().numpy()
-        if not hasattr(self,"Iclassifier"):
-            self.Iclassifier = LogisticRegression(random_state=0, C=0.316, max_iter=1000, verbose=1, n_jobs=-1)
-        self.Iclassifier.fit(imfeatures, labels)
-        self.log( "ImProbe",self.Iclassifier.score(imfeatures, labels))
-        '''
+
         l2_norm_obj = sum(p.norm(2) for p in self.model.module.visual.parameters())
         l2_norm_ori = sum(p.norm(2) for p in self.model_ori.module.visual.parameters())
         ratio = abs(l2_norm_ori - l2_norm_obj) / float(l2_norm_ori)
@@ -324,6 +307,7 @@ class myLightningModule(LightningModule):
     def on_validation_epoch_start(self):
         self.mu_img = torch.tensor((0.485, 0.456, 0.406)).view(3,1,1).to(self.device)
         self.std_img = torch.tensor((0.229, 0.224, 0.225)).view(3,1,1).to(self.device)
+        self.results=[]
     def validation_step(self, batch, batch_idx, *args, **kwargs):
         images, target,text = batch
         #a is the image, b is the target
@@ -335,9 +319,9 @@ class myLightningModule(LightningModule):
         print("text shape",text.shape)
 
         print("target shape",target.shape)
-
+        
         output_prompt= multiGPU_CLIP(self.model, self.prompter(images), text)
-
+        self.results.append({"logits":output_prompt, "labels":torch.arange(images.size(0), device=self.device)})
         loss = self.criterion(output_prompt, torch.arange(images.size(0), device=self.device))
 
         # measure accuracy and record loss
@@ -380,7 +364,18 @@ class myLightningModule(LightningModule):
         
 
         return loss
+    def validation_epoch_end(self, outputs):
+        #make linear probes here, and log the results.
+        
+        Logits=torch.nan_to_num(torch.cat([val["logits"] for val in self.results],dim=0)).cpu().numpy()
+        Labels=torch.cat([val["labels"] for val in self.results],dim=0).cpu().numpy()
 
+        if not hasattr(self,"Iclassifier"):
+            self.Iclassifier = LogisticRegression(random_state=0, C=0.316, max_iter=1000, verbose=1, n_jobs=-1)
+        self.Iclassifier.fit(Logits, Labels)
+        self.log( "LinearProbe",self.Iclassifier.score(Logits, Labels))
+        #delete the results to save memory
+        del self.results
          #You could log here the val_loss, or just print something. 
         
     def configure_optimizers(self):
