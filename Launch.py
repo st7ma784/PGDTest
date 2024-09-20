@@ -65,7 +65,7 @@ def train(config={
             gradient_clip_val=0.25,# Not supported for manual optimization
             fast_dev_run=False,
             precision=p,
-            debug=config.get("debug",False),
+            fast_dev_run=config.get("debug",False),
     )
     if config["batch_size"] !=1:
 
