@@ -99,6 +99,7 @@ class baseparser(HyperOptArgumentParser):
         self.opt_list("--method", default='null_patch', type=str, options=['null_patch'], tunable=False)
         self.opt_list("--prompt_size", default=30, type=int, tunable=False)
         self.opt_list("--add_prompt_size", default=0, type=int, tunable=False)
+        self.opt_list("--optimizer", default='sgd', type=str, options=["sgd","adam","adamw"],tunable=False)
         # dataset
         self.opt_list("--root", default='./data', type=str, tunable=False)
         self.opt_list("--dataset", default='cifar10', options=["ImageNet","tinyImageNet"],type=str, tunable=False)

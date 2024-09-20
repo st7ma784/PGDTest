@@ -307,28 +307,23 @@ class myLightningModule(LightningModule):
     def on_validation_epoch_start(self):
         self.mu_img = torch.tensor((0.485, 0.456, 0.406)).view(3,1,1).to(self.device)
         self.std_img = torch.tensor((0.229, 0.224, 0.225)).view(3,1,1).to(self.device)
-        self.results=[]
+        self.cleanresults=[]
+        self.atatckedresults=[]
     def validation_step(self, batch, batch_idx, *args, **kwargs):
         images, target,text = batch
         #a is the image, b is the target
         #get the datamodule text list to lookup the text embeddings.s
      
         prompt_token = None
-        print("images shape",images.shape)
-        text=text.squeeze(1)
-        print("text shape",text.shape)
-
-        print("target shape",target.shape)
-        
+        text=text.squeeze(1)      
         output_prompt= multiGPU_CLIP(self.model, self.prompter(images), text)
-        self.results.append({"logits":output_prompt, "labels":torch.arange(images.size(0), device=self.device)})
+        self.cleanresults.append({"logits":output_prompt, "labels":torch.arange(images.size(0), device=self.device)})
         loss = self.criterion(output_prompt, torch.arange(images.size(0), device=self.device))
 
         # measure accuracy and record loss
-        acc1 = accuracy(output_prompt, target, topk=(1,))
-        print("acc1",acc1)
-        self.log('val_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
-        self.log('val_acc', acc1[0].item(), on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        acc1 = accuracy(output_prompt, torch.arange(images.shape[0],device=images.device), topk=(1,))
+        self.log('val_clean_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        self.log('val_clean_acc', acc1[0].item(), on_step=True, on_epoch=True, prog_bar=True, logger=True)
 
         if self.args.get("CW",False):
             delta_prompt = self.attack_CW(
@@ -353,29 +348,49 @@ class myLightningModule(LightningModule):
                                                     text) #prommpt token is not used here.maybe should be?
 
         loss = self.criterion(output_prompt_adv, torch.arange(images.size(0),device=images.device)) #shoudl be torch arange(images.size(0), device=self.device)
-
+        self.atatckedresults.append({"logits":output_prompt_adv, "labels":torch.arange(images.size(0), device=self.device)})
         # bl attack
         # torch.cuda.empty_cache()
 
         # measure accuracy and record loss
         acc1 = accuracy(output_prompt_adv, torch.arange(images.size(0),device=images.device), topk=(1,))
-        self.log('val_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
-        self.log('val_acc', acc1[0].item(), on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        self.log('val_dirty_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        self.log('val_dirty_acc', acc1[0].item(), on_step=True, on_epoch=True, prog_bar=True, logger=True)
         
 
         return loss
     def validation_epoch_end(self, outputs):
         #make linear probes here, and log the results.
         
-        Logits=torch.nan_to_num(torch.cat([val["logits"] for val in self.results],dim=0)).cpu().numpy()
-        Labels=torch.cat([val["labels"] for val in self.results],dim=0).cpu().numpy()
+        GoodLogits=torch.nan_to_num(torch.cat([val["logits"] for val in self.cleanresults],dim=0)).cpu().numpy()
+        GoodLabels=torch.cat([val["labels"] for val in self.cleanresults],dim=0).cpu().numpy()
+        BadLogits=torch.nan_to_num(torch.cat([val["logits"] for val in self.atatckedresults],dim=0)).cpu().numpy()
+        BadLabels=torch.cat([val["labels"] for val in self.atatckedresults],dim=0).cpu().numpy()
 
-        if not hasattr(self,"Iclassifier"):
-            self.Iclassifier = LogisticRegression(random_state=0, C=0.316, max_iter=1000, verbose=1, n_jobs=-1)
-        self.Iclassifier.fit(Logits, Labels)
-        self.log( "LinearProbe",self.Iclassifier.score(Logits, Labels))
+        if not hasattr(self,"Cleanclassifier"):
+            self.Cleanclassifier = LogisticRegression(random_state=0, C=0.316, max_iter=1000, verbose=1, n_jobs=-1)
+        self.Cleanclassifier.fit(GoodLogits, GoodLabels)
+        if not hasattr(self,"Dirtyclassifier"):
+            self.Dirtyclassifier = LogisticRegression(random_state=0, C=0.316, max_iter=1000, verbose=1, n_jobs=-1)
+        if not hasattr(self,"general classifier"):
+            self.generalclassifier = LogisticRegression(random_state=0, C=0.316, max_iter=1000, verbose=1, n_jobs=-1)
+        self.Dirtyclassifier.fit(BadLogits, BadLabels)
+        self.log( "Clean Classifier on Dirty Features",self.Cleanclassifier.score(BadLogits, BadLabels))
+        self.log( "Dirty Classifier on Clean Features",self.Dirtyclassifier.score(GoodLogits, GoodLabels))
+        self.log( "Clean Classifier on Clean Features",self.Cleanclassifier.score(GoodLogits, GoodLabels))
+        self.log( "Dirty Classifier on Dirty Features",self.Dirtyclassifier.score(BadLogits, BadLabels))
+        
+        self.generalclassifier.fit(np.concatenate([GoodLogits,BadLogits]), np.concatenate([GoodLabels,BadLabels]))
+        self.log( "General Classifier on Dirty Features",self.generalclassifier.score(BadLogits, BadLabels))
+        self.log( "General Classifier on Clean Features",self.generalclassifier.score(GoodLogits, GoodLabels))
+        self.log( "General Classifier on All Features",self.generalclassifier.score(np.concatenate([GoodLogits,BadLogits]), np.concatenate([GoodLabels,BadLabels])))
+
+        #this should give us PLENTY of data to write about! 
+        
         #delete the results to save memory
-        del self.results
+        del self.cleanresults
+        del self.atatckedresults
+
          #You could log here the val_loss, or just print something. 
         
     def configure_optimizers(self):
@@ -383,14 +398,24 @@ class myLightningModule(LightningModule):
         # https://pytorch.org/docs/stable/optim.html#torch.optim.AdamW
         # https://pytorch-lightning.readthedocs.io/en/latest/common/optimizers.html
 
-        optimizer = torch.optim.SGD(list(self.model.visual.parameters()),
+        if self.args.get(optimizer,"sgd") == "adamw":
+            optimizer_fn=torch.optim.AdamW
+        elif self.args.get(optimizer,"sgd") == "sgd":
+            optimizer_fn=torch.optim.SGD
+        elif self.args.get(optimizer,"sgd") == "adam":
+            optimizer_fn=torch.optim.Adam
+        else:
+            raise ValueError
+
+
+        optimizer = optimizer_fn(list(self.model.visual.parameters()),
                                         lr=self.args.get("learning_rate",1e-5),
                                         momentum=self.args.get("momentum",0.99),
                                         weight_decay=self.args.get("weight_decay",0))
         
 
         if self.args.get("last_num_ft",-1) != -1:
-            optimizer = torch.optim.SGD(self.model.visual.parameters()[-self.args.last_num_ft:], # remember to add the parameters of your model decoder into this line!! 
+            optimizer = optimizer_fn(self.model.visual.parameters()[-self.args.last_num_ft:], # remember to add the parameters of your model decoder into this line!! 
                                         lr=self.args.get("learning_rate",1e-5),
                                         momentum=self.args.get("momentum",0.99),
                                         weight_decay=self.args.get("weight_decay",0))
