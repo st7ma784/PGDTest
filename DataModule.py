@@ -176,6 +176,10 @@ class MyDataModule(pl.LightningDataModule):
                                 'oxfordpet', 'flowers102', 'dtd', 'fgvc_aircraft',
                                  'PCAM']   #'tinyImageNet', 'ImageNet',
         self.batch_size = batch_size
+        if kwargs.get("debug",False):
+            self.val_dataset_names = ['cifar10']
+            self.train_dataset_names = ['cifar10']
+            
         self.template = 'This is a photo of a {}'
         self.preprocess = preprocess224_interpolate
         
