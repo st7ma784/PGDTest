@@ -171,23 +171,23 @@ class MyDataModule(pl.LightningDataModule):
         self.datasetname = dataset
         self.val_dataset_names = val_dataset_names if val_dataset_names is not None else ['cifar10', 'cifar100', 'STL10', 'SUN397', 'Food101',
                                 'oxfordpet', 'flowers102', 'dtd', 'fgvc_aircraft',
-                                'tinyImageNet', 'ImageNet', 'Caltech101', 'Caltech256', 'PCAM'] #StanfordCars --url; no longer valid. 'EuroSAT' --ssl error
+                                'tinyImageNet', 'ImageNet', 'Caltech256', 'PCAM'] #StanfordCars --url; no longer valid. 'EuroSAT' --ssl error 'Caltech101'- md5?
         self.batch_size = batch_size
         self.template = 'This is a photo of a {}'
         self.preprocess = preprocess224_interpolate
         
     def prepare_data(self):
         # No preparation needed
-        pass
+        self.setup(dowload=True)
 
 
-    def setup(self, stage=None):
+    def setup(self, stage=None,dowload=False):
         if stage == 'fit' or stage is None:
             
             if self.datasetname == 'cifar100':
-                self.dataset= CIFAR100(root=self.imagenet_root, transform=self.preprocess, download=True, train=True)
+                self.dataset= CIFAR100(root=self.imagenet_root, transform=self.preprocess, download=download, train=True)
             elif self.datasetname == 'cifar10':
-                self.dataset= CIFAR10(root=self.imagenet_root, transform=self.preprocess, download=True, train=True)
+                self.dataset= CIFAR10(root=self.imagenet_root, transform=self.preprocess, download=download, train=True)
             # elif self.datasetname == 'ImageNet':
             #     assert self.imagenet_root is not None
             #     print(f"Loading ImageNet from {self.imagenet_root}")
@@ -199,7 +199,8 @@ class MyDataModule(pl.LightningDataModule):
             # else:
             #     print(f"Train dataset {self.dataset} not implemented")
             #     raise NotImplementedError
-            
+            #for each dataset, concatenate it. 
+            #big_dataset=torch.utils.data.ConcatDataset([dataset for dataset in self.dataset])
             
             class_names = self.dataset.classes
             class_names = refine_classname(class_names)
@@ -219,35 +220,35 @@ class MyDataModule(pl.LightningDataModule):
             val_dataset_dict = {}
         
             if 'cifar10' in self.val_dataset_names:
-                val_dataset_dict.update({'cifar10': CIFAR10(root=self.imagenet_root, transform=self.preprocess, download=True, train=True)})
+                val_dataset_dict.update({'cifar10': CIFAR10(root=self.imagenet_root, transform=self.preprocess, download=download, train=True)})
             if 'cifar100' in self.val_dataset_names:
-                val_dataset_dict.update({'cifar100': CIFAR100(root=self.imagenet_root, transform=self.preprocess, download=True, train=False)})
+                val_dataset_dict.update({'cifar100': CIFAR100(root=self.imagenet_root, transform=self.preprocess, download=download, train=False)})
             if 'Caltech101'in self.val_dataset_names:
-                val_dataset_dict.update({'Caltech101': Caltech101(root=self.imagenet_root, target_type='category', transform=self.preprocess, download=True)})
+                val_dataset_dict.update({'Caltech101': Caltech101(root=self.imagenet_root, target_type='category', transform=self.preprocess, download=download)})
             if 'PCAM' in self.val_dataset_names:
-                val_dataset_dict.update({'PCAM': PCAM(root=self.imagenet_root, split='test', transform=self.preprocess, download=True)})
+                val_dataset_dict.update({'PCAM': PCAM(root=self.imagenet_root, split='test', transform=self.preprocess, download=download)})
                     # val_dataset_list.append(PCAM(root=self.imagenet_root, split='test', transform=preprocess224,
                     #                                 download=True))
             if 'STL10' in self.val_dataset_names:
-                val_dataset_dict.update({'STL10': STL10(root=self.imagenet_root, split='test', transform=self.preprocess, download=True)})
+                val_dataset_dict.update({'STL10': STL10(root=self.imagenet_root, split='test', transform=self.preprocess, download=download)})
                    
             if 'SUN397' in self.val_dataset_names:
-                val_dataset_dict.update({'SUN397': SUN397(root=self.imagenet_root, transform=self.preprocess, download=True)})
+                val_dataset_dict.update({'SUN397': SUN397(root=self.imagenet_root, transform=self.preprocess, download=download)})
                     # val_dataset_list.append(SUN397(root=self.imagenet_root,
                     #                                 transform=preprocess224, download=True))
             # if 'StanfordCars' in self.val_dataset_names:                                                   #no longer available for download
             #         val_dataset_list.append(StanfordCars(root=self.imagenet_root, split='test',
                                                             # transform=preprocess224, download=True))
             if 'Food101' in self.val_dataset_names: 
-                val_dataset_dict.update({'Food101': Food101(root=self.imagenet_root, split='test', transform=self.preprocess, download=True)})  ##is it this one that makes it crash> 
+                val_dataset_dict.update({'Food101': Food101(root=self.imagenet_root, split='test', transform=self.preprocess, download=download)})  ##is it this one that makes it crash> 
                     # val_dataset_list.append(Food101(root=self.imagenet_root, split='test',
                     #                                 transform=preprocess224, download=True))
             if 'oxfordpet' in self.val_dataset_names:
-                val_dataset_dict.update({'oxfordpet': OxfordIIITPet(root=self.imagenet_root, split='test', transform=self.preprocess, download=True)})
+                val_dataset_dict.update({'oxfordpet': OxfordIIITPet(root=self.imagenet_root, split='test', transform=self.preprocess, download=download)})
                     # val_dataset_list.append(OxfordIIITPet(root=self.imagenet_root, split='test',
                     #                                         transform=preprocess224, download=True))
             if 'EuroSAT' in self.val_dataset_names:
-                val_dataset_dict.update({'EuroSAT': EuroSAT(root=self.imagenet_root, transform=self.preprocess, download=True)})
+                val_dataset_dict.update({'EuroSAT': EuroSAT(root=self.imagenet_root, transform=self.preprocess, download=download)})
                     # val_dataset_list.append(EuroSAT(root=self.imagenet_root,
                                                     # transform=preprocess224, download=True))
             # if 'Caltech256' in self.val_dataset_names:  <==========================This is the wry bastard causing errors! 
@@ -255,24 +256,24 @@ class MyDataModule(pl.LightningDataModule):
             #         # val_dataset_list.append(Caltech256(root=self.imagenet_root, transform=preprocess224,
                                                         # download=True))
             if 'flowers102' in self.val_dataset_names:
-                val_dataset_dict.update({'flowers102': Flowers102(root=self.imagenet_root, split='test', transform=self.preprocess, download=True)})
+                val_dataset_dict.update({'flowers102': Flowers102(root=self.imagenet_root, split='test', transform=self.preprocess, download=download)})
                     # val_dataset_list.append(Flowers102(root=self.imagenet_root, split='test',
                                                         # transform=preprocess224, download=True))
             if 'Country211' in self.val_dataset_names:
-                val_dataset_dict.update({'Country211': Country211(root=self.imagenet_root, split='test', transform=self.preprocess, download=True)})
+                val_dataset_dict.update({'Country211': Country211(root=self.imagenet_root, split='test', transform=self.preprocess, download=download)})
                     # val_dataset_list.append(Country211(root=self.imagenet_root, split='test',
                                                         # transform=preprocess224, download=True))
             if 'dtd' in self.val_dataset_names:
-                val_dataset_dict.update({'dtd': DTD(root=self.imagenet_root, split='test', transform=self.preprocess, download=True)})
+                val_dataset_dict.update({'dtd': DTD(root=self.imagenet_root, split='test', transform=self.preprocess, download=download)})
                     # val_dataset_list.append(DTD(root=self.imagenet_root, split='test',
                                                 # transform=preprocess224, download=True))
             if 'fgvc_aircraft' in self.val_dataset_names:
-                val_dataset_dict.update({'fgvc_aircraft': FGVCAircraft(root=self.imagenet_root, split='test', transform=self.preprocess, download=True)})
+                val_dataset_dict.update({'fgvc_aircraft': FGVCAircraft(root=self.imagenet_root, split='test', transform=self.preprocess, download=download)})
                     # val_dataset_list.append(FGVCAircraft(root=self.imagenet_root, split='test',
                                                             # transform=preprocess224, download=True))
             if 'hateful_memes' in self.val_dataset_names:
                 val_dataset_dict.update({'hateful_memes': HatefulMemes(root=self.imagenet_root, splits=['test_seen', 'test_unseen'],
-                                                            transform=self.preprocess)})
+                                                            transform=self.preprocess,download=download)})
             # if 'ImageNet' in self.val_dataset_names:
             #         val_dataset_list.append(ImageFolder(os.path.join(self.imagenet_root, 'val'), transform=preprocess224))
             # if 'tinyImageNet' in self.val_dataset_names:
