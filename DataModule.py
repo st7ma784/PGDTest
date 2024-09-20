@@ -179,7 +179,7 @@ class MyDataModule(pl.LightningDataModule):
         if kwargs.get("debug",False):
             print("Debugging")
             print(" ---------------------------------------DEBUGGING---------------------------------------")
-            
+
             self.val_dataset_names = ['cifar10']
             self.train_dataset_names = ['cifar10']
 
@@ -392,13 +392,13 @@ class MyDataModule(pl.LightningDataModule):
 
 
     def train_dataloader(self):
-        return DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True, num_workers=4 ,pin_memory=True,prefetch_factor=4,drop_last=True)
+        return DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True, num_workers=16 ,pin_memory=True,prefetch_factor=4,drop_last=True)
 
     def val_dataloader(self):
-        return [DataLoader(dataset, batch_size=self.batch_size, shuffle=False, num_workers=4, pin_memory=True,prefetch_factor=4,drop_last=True) for dataset in self.val_datasets]
+        return [DataLoader(dataset, batch_size=self.batch_size, shuffle=False, num_workers=16, pin_memory=True,prefetch_factor=4,drop_last=True) for dataset in self.val_datasets]
 
     def test_dataloader(self):
-        return [DataLoader(dataset, batch_size=self.batch_size, shuffle=False, num_workers=4, pin_memory=True,prefetch_factor=4,drop_last=True) for dataset in self.val_datasets]
+        return [DataLoader(dataset, batch_size=self.batch_size, shuffle=False, num_workers=16, pin_memory=True,prefetch_factor=4,drop_last=True) for dataset in self.val_datasets]
 
 
 
