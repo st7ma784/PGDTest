@@ -398,11 +398,11 @@ class myLightningModule(LightningModule):
         # https://pytorch.org/docs/stable/optim.html#torch.optim.AdamW
         # https://pytorch-lightning.readthedocs.io/en/latest/common/optimizers.html
 
-        if self.args.get(optimizer,"sgd") == "adamw":
+        if self.args.get("optimizer","sgd") == "adamw":
             optimizer_fn=torch.optim.AdamW
-        elif self.args.get(optimizer,"sgd") == "sgd":
+        elif self.args.get("optimizer","sgd") == "sgd":
             optimizer_fn=torch.optim.SGD
-        elif self.args.get(optimizer,"sgd") == "adam":
+        elif self.args.get("optimizer","sgd") == "adam":
             optimizer_fn=torch.optim.Adam
         else:
             raise ValueError
