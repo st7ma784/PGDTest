@@ -311,11 +311,13 @@ class myLightningModule(LightningModule):
         self.std_img = torch.tensor((0.229, 0.224, 0.225)).view(3,1,1).to(self.device)
         self.cleanresults=[]
         self.attackedresults=[]
+        self.data_loader_count = len(self.trainer.datamodule.val_dataloader())
+
     def validation_step(self, batch, batch_idx, *args, **kwargs):
         images, target,text = batch
         #a is the image, b is the target
         #get the datamodule text list to lookup the text embeddings.s
-     
+
         prompt_token = None
         text=text.squeeze(1)      
         output_prompt= multiGPU_CLIP(self.model, self.prompter(images), text)
@@ -362,6 +364,7 @@ class myLightningModule(LightningModule):
 
         return loss
     def on_validation_epoch_end(self):
+
         #make linear probes here, and log the results.
         
         GoodLogits=torch.nan_to_num(torch.cat([val["logits"] for val in self.cleanresults],dim=0)).cpu().numpy()
@@ -371,12 +374,13 @@ class myLightningModule(LightningModule):
 
         if not hasattr(self,"Cleanclassifier"):
             self.Cleanclassifier = LogisticRegression(random_state=0, C=0.316, max_iter=1000, verbose=1, n_jobs=-1)
-        self.Cleanclassifier.fit(GoodLogits, GoodLabels)
         if not hasattr(self,"Dirtyclassifier"):
             self.Dirtyclassifier = LogisticRegression(random_state=0, C=0.316, max_iter=1000, verbose=1, n_jobs=-1)
         if not hasattr(self,"general classifier"):
             self.generalclassifier = LogisticRegression(random_state=0, C=0.316, max_iter=1000, verbose=1, n_jobs=-1)
         self.Dirtyclassifier.fit(BadLogits, BadLabels)
+        self.Cleanclassifier.fit(GoodLogits, GoodLabels)
+
         self.log( "Clean Classifier on Dirty Features",self.Cleanclassifier.score(BadLogits, BadLabels))
         self.log( "Dirty Classifier on Clean Features",self.Dirtyclassifier.score(GoodLogits, GoodLabels))
         self.log( "Clean Classifier on Clean Features",self.Cleanclassifier.score(GoodLogits, GoodLabels))
