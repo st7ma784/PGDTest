@@ -408,7 +408,7 @@ class myLightningModule(LightningModule):
 
 
 
-        self.cleanresults.append({"logits":img_embed.detach(), "textlabels":target})
+        self.cleanresults.append({"logits":img_embed.detach(), "textlabels":target}) #using target like this is fine because each dataloader is tested and logged independently.
         loss = self.criterion(output_prompt, torch.arange(images.size(0), device=self.device))
 
         # measure accuracy and record loss
@@ -496,28 +496,33 @@ class myLightningModule(LightningModule):
         # pretty sure we probably want to use the same optimizer as the original paper: the adamw optimizer
         # https://pytorch.org/docs/stable/optim.html#torch.optim.AdamW
         # https://pytorch-lightning.readthedocs.io/en/latest/common/optimizers.html
-
+        args={"lr":self.args.get("learning_rate",1e-5)}
         if self.args.get("optimizer","sgd") == "adamw":
             optimizer_fn=torch.optim.AdamW
+            args.update({"betas":(0.9, 0.999),
+                  "eps":1e-08,
+                  "weight_decay":self.args.get("weight_decay",0.0001)})
         elif self.args.get("optimizer","sgd") == "sgd":
             optimizer_fn=torch.optim.SGD
+            args.update({"momentum":self.args.get("momentum",0.9),
+                  "weight_decay":self.args.get("weight_decay",0.0001)})
+
         elif self.args.get("optimizer","sgd") == "adam":
             optimizer_fn=torch.optim.Adam
+            args.update({"betas":(0.9, 0.999),
+                  "eps":1e-08,
+                  "weight_decay":self.args.get("weight_decay",0.0001)})
         else:
             raise ValueError
 
         #note we've adjusted this to allow the text module to move too! 
-
-        optimizer = optimizer_fn(list(self.model.parameters()),
-                                        lr=self.args.get("learning_rate",1e-5),
-                                        momentum=self.args.get("momentum",0.99),
-                                        weight_decay=self.args.get("weight_decay",0))
+        parameters = list(self.model.visual.parameters()) if self.args.get("freeze_text",True) else list(self.model.parameters())
+        optimizer = optimizer_fn(parameters,
+                                        **args)
         
 
         if self.args.get("last_num_ft",-1) != -1:
-            optimizer = optimizer_fn(self.model.parameters()[-self.args.last_num_ft:], # remember to add the parameters of your model decoder into this line!! 
-                                        lr=self.args.get("learning_rate",1e-5),
-                                        momentum=self.args.get("momentum",0.99),
-                                        weight_decay=self.args.get("weight_decay",0))
+            optimizer = optimizer_fn(parameters[-self.args.last_num_ft:], # remember to add the parameters of your model decoder into this line!! 
+                                        **args)
         #scheduler = cosine_lr(optimizer, self.args.get("learning_rate",1e-5), self.args.get("warmup",1000), self.args.get("total_steps",100000))
         return optimizer#([optimizer],[scheduler])
