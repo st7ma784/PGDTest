@@ -209,7 +209,7 @@ class myLightningModule(LightningModule):
             d = clamp(d, self.lower_limit - x, self.upper_limit - x)
             delta.data[:, :, :, :] = d
             delta.grad.zero_()
-        self.log("mean_attack_losses",mean(losses))
+        self.log("mean_attack_losses",sum(losses)/len(losses))
         self.log("max_attack_loss",max(losses))
         self.log("min_attack_loss",min(losses))
         return delta
