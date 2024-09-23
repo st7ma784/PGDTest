@@ -118,7 +118,7 @@ class myLightningModule(LightningModule):
         d = (d + scaled_g * alpha).view(d.size(0), -1).renorm(p=2, dim=0, maxnorm=eps).view_as(d)
         return d
     
-        @torch.enable_grad()
+    @torch.enable_grad()
     def attack_text_pgd(self,  X, target, text_tokens, alpha, attack_iters, restarts=1, early_stop=True, epsilon=0):
         delta=self.init_delta(text_tokens,epsilon)
         self.insert_text_model_hook()
