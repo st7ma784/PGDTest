@@ -155,7 +155,7 @@ class myLightningModule(LightningModule):
             #step 6: remove hooks and zero grad
             self.remove_text_model_hook()
             delta.grad.zero_()
-            
+
 
             #step 7: now do attack as normal
             d = delta
@@ -306,7 +306,7 @@ class myLightningModule(LightningModule):
         images, target,text = batch #label shouldnt be used here! 
         text=text.squeeze(1)
 
-        prompted_clean_images = self.prompter(images) #does nothing - its a null prompter
+        images = self.prompter(images) #does nothing - its a null prompter
         Dirtyimages=self.attack(images, target, text, self.args.get("alpha",1), self.args.get("attack_iters",5), epsilon=self.args.get("train_eps",1))
         '''
         Here's where you run the dirty image through your model... first through an encoder, then through a decoder.
@@ -316,16 +316,16 @@ class myLightningModule(LightningModule):
         loss2 = self.YourCriterion(rebuilt_images, images)
         #and add your loss into the total loss. 
         '''
-
-        prompted_Dirtyimages = self.prompter(normalize(Dirtyimages)) #does nothing - its a null prompter
-        output_of_training_model_with_dirty_images= multiGPU_CLIP( self.model, prompted_Dirtyimages, text)
-        output_of_pretrained_model_with_dirty_images= multiGPU_CLIP( self.model_ori, prompted_Dirtyimages, text)
+        Dirtyimages = torch.div(torch.sub(Dirtyimages, self.mu_img), self.std_img) #normalize(Dirtyimages) but preserves grad
+        # prompted_Dirtyimages = self.prompter(normalize(Dirtyimages)) #does nothing - its a null prompter
+        output_of_training_model_with_dirty_images= multiGPU_CLIP( self.model, Dirtyimages, text)
+        output_of_pretrained_model_with_dirty_images= multiGPU_CLIP( self.model_ori, Dirtyimages, text)
         '''
         we would assume if the attack is successful, the model would be more confident in the wrong class, so we can do the following check:
         Loss_to_see_attack_success = self.CrossEntropy_loss(output_of_training_model_with_dirty_images, torch.arange(images.size(0), device=self.device))
 
         '''
-        output_of_training_model_with_clean_images = multiGPU_CLIP( self.model, prompted_clean_images, text)
+        output_of_training_model_with_clean_images = multiGPU_CLIP( self.model, images, text)
         #This loss stops the divergence of the model from the pretrained model.
         loss_between_our_training_model_and_pretrained_on_dirty_images = self.criterion_kl(F.log_softmax(output_of_training_model_with_dirty_images, dim=1), F.softmax(output_of_pretrained_model_with_dirty_images, dim=1))
         
@@ -343,7 +343,11 @@ class myLightningModule(LightningModule):
         '''
 
         loss_on_training_model_with_dirty_images = self.criterion(output_of_training_model_with_dirty_images, torch.arange(images.size(0), device=self.device)) # 
-        loss=loss_on_training_model_with_dirty_images + loss_between_dirty_and_clean_images_on_training_model + loss_between_our_training_model_and_pretrained_on_dirty_images
+        self.log("loss_on_training_model_with_dirty_images",loss_on_training_model_with_dirty_images)
+        self.log("loss_between_dirty_and_clean_images_on_training_model",loss_between_dirty_and_clean_images_on_training_model)
+        self.log("loss_between_our_training_model_and_pretrained_on_dirty_images",loss_between_our_training_model_and_pretrained_on_dirty_images)
+
+        loss=loss_on_training_model_with_dirty_images + loss_between_dirty_and_clean_images_on_training_model/2 + loss_between_our_training_model_and_pretrained_on_dirty_images/2
         
         #self.model.logit_scale.data = torch.clamp(self.model.logit_scale.data, 0, 4.6052)
 
