@@ -408,7 +408,7 @@ class myLightningModule(LightningModule):
 
 
 
-        self.cleanresults.append({"logits":img_embed.detach(), "textlabels":scale_text_embed.detach()})
+        self.cleanresults.append({"logits":img_embed.detach(), "textlabels":target})
         loss = self.criterion(output_prompt, torch.arange(images.size(0), device=self.device))
 
         # measure accuracy and record loss
@@ -443,7 +443,7 @@ class myLightningModule(LightningModule):
 
 
         loss = self.criterion(output_prompt_adv, torch.arange(images.size(0),device=images.device)) #shoudl be torch arange(images.size(0), device=self.device)
-        self.attackedresults.append({"logits":img_embed, "textlabels":scale_text_embed})
+        self.attackedresults.append({"logits":img_embed, "textlabels":target})
         # bl attack
         # torch.cuda.empty_cache()
 
