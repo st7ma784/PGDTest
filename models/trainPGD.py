@@ -62,7 +62,7 @@ class myLightningModule(LightningModule):
         (Note, they have several different prompters in the model.prompters.py file, you can use them as a reference)
         '''
 
-        self.criterion = torch.nn.CrossEntropyLoss()
+        self.criterion = torch.nn.CrossEntropyLoss(reduction="mean")
         self.criterion_kl = nn.KLDivLoss(reduction="sum")
 
 
@@ -185,6 +185,7 @@ class myLightningModule(LightningModule):
     @torch.enable_grad()
     def attack_pgd(self,  X, target, text_tokens, alpha, attack_iters, restarts=1, early_stop=True, epsilon=0):
         delta=self.init_delta(X,epsilon)
+        losses=[]
         for _ in range(attack_iters):
             # output = model(normalize(X ))
             #prompted_images = self.prompter(normalize(delta + X ))
@@ -198,7 +199,7 @@ class myLightningModule(LightningModule):
             output = multiGPU_CLIP(self.model, prompted_images, text_tokens)#, prompt_token)
             loss = self.criterion(output, torch.arange(prompted_images.size(0), device=self.device))
             loss.backward()
-            self.log("attack_loss",loss)
+            losses.append(loss)
             #Dear Afra, here is something you should probably log with self.log("attack_loss",loss)
             grad = delta.grad.detach()
             d = delta[:, :, :, :]
@@ -208,6 +209,9 @@ class myLightningModule(LightningModule):
             d = clamp(d, self.lower_limit - x, self.upper_limit - x)
             delta.data[:, :, :, :] = d
             delta.grad.zero_()
+        self.log("mean_attack_losses",mean(losses))
+        self.log("max_attack_loss",max(losses))
+        self.log("min_attack_loss",min(losses))
         return delta
     
     @torch.enable_grad()
@@ -240,11 +244,16 @@ class myLightningModule(LightningModule):
             prompted_images = self.prompter(normalize(X + delta))
             prompt_token = self.add_prompter()
             output= multiGPU_CLIP(self.model, prompted_images, text_tokens)#, prompt_token)
+            
+            
+            
+            
             label_mask = one_hot_embedding(torch.arange(X.shape(0),device=X.device), output.size(1))
             correct_logit = torch.sum(label_mask * output, dim=1)
             wrong_logit, _ = torch.max((1 - label_mask) * output - 1e4 * label_mask, axis=1)
             # loss = criterion(output, target)
             loss = - torch.sum(F.relu(correct_logit - wrong_logit + 50))
+
             loss.backward()
             #Dear Afra, here is something you should probably log with self.log("attack_loss",loss)
             self.log("attack_loss",loss)
@@ -262,6 +271,7 @@ class myLightningModule(LightningModule):
     @torch.enable_grad()
     def attack_CW_noprompt(self, X, target, text_tokens, alpha, attack_iters, restarts=1, early_stop=True, epsilon=0):
         delta=self.init_delta(X,epsilon)
+        loss=[]
         for _ in range(attack_iters):
             # output = model(normalize(X ))
             _images = normalize(X + delta)
@@ -342,12 +352,13 @@ class myLightningModule(LightningModule):
         
         '''
 
-        loss_on_training_model_with_dirty_images = self.criterion(output_of_training_model_with_dirty_images, torch.arange(images.size(0), device=self.device)) # 
-        self.log("loss_on_training_model_with_dirty_images",loss_on_training_model_with_dirty_images)
-        self.log("loss_between_dirty_and_clean_images_on_training_model",loss_between_dirty_and_clean_images_on_training_model)
-        self.log("loss_between_our_training_model_and_pretrained_on_dirty_images",loss_between_our_training_model_and_pretrained_on_dirty_images)
+        loss_on_training_model_with_dirty_images = self.criterion(output_of_training_model_with_dirty_images, torch.arange(images.size(0), device=self.device)) # the output of this is huge compared to others. 
 
-        loss=loss_on_training_model_with_dirty_images + loss_between_dirty_and_clean_images_on_training_model/2 + loss_between_our_training_model_and_pretrained_on_dirty_images/2
+        self.log("loss_on_training_model_with_dirty_images",loss_on_training_model_with_dirty_images)
+        self.log("loss_between_dirty_and_clean_images_on_training_model",loss_between_dirty_and_clean_images_on_training_model  *200)
+        self.log("loss_between_our_training_model_and_pretrained_on_dirty_images",loss_between_our_training_model_and_pretrained_on_dirty_images*200 )
+
+        loss=loss_on_training_model_with_dirty_images + loss_between_dirty_and_clean_images_on_training_model*200 + loss_between_our_training_model_and_pretrained_on_dirty_images*200
         
         #self.model.logit_scale.data = torch.clamp(self.model.logit_scale.data, 0, 4.6052)
 
