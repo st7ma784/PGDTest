@@ -494,15 +494,16 @@ class myLightningModule(LightningModule):
         else:
             raise ValueError
 
+        #note we've adjusted this to allow the text module to move too! 
 
-        optimizer = optimizer_fn(list(self.model.visual.parameters()),
+        optimizer = optimizer_fn(list(self.model.parameters()),
                                         lr=self.args.get("learning_rate",1e-5),
                                         momentum=self.args.get("momentum",0.99),
                                         weight_decay=self.args.get("weight_decay",0))
         
 
         if self.args.get("last_num_ft",-1) != -1:
-            optimizer = optimizer_fn(self.model.visual.parameters()[-self.args.last_num_ft:], # remember to add the parameters of your model decoder into this line!! 
+            optimizer = optimizer_fn(self.model.parameters()[-self.args.last_num_ft:], # remember to add the parameters of your model decoder into this line!! 
                                         lr=self.args.get("learning_rate",1e-5),
                                         momentum=self.args.get("momentum",0.99),
                                         weight_decay=self.args.get("weight_decay",0))
