@@ -393,14 +393,22 @@ class myLightningModule(LightningModule):
 
         prompt_token = None
         text=text.squeeze(1)      
-        output_prompt= multiGPU_CLIP(self.model, self.prompter(images), text)
-        tosave=self.model.encode_image(images)
-        if batch_idx == 0:
-            #save the first batch of images to disk
-            #OR project into 2d using PCA and save that to disk
-            #plot on graph. 
-            #labels points by class 
-        self.cleanresults.append({"logits":output_prompt, "labels":torch.arange(images.size(0), device=self.device)})
+
+        
+        img_embed=self.model.encode_image(images)
+        scale_text_embed=self.model.encode_text(text)
+        img_embed_norm = img_embed / img_embed.norm(dim=-1, keepdim=True)
+        scale_text_embed_norm = scale_text_embed / scale_text_embed.norm(dim=-1, keepdim=True)
+        output_prompt = img_embed_norm @ scale_text_embed_norm.t()
+        # if batch_idx == 0:
+        #     #save the first batch of images to disk
+        #     #OR project into 2d using PCA and save that to disk
+        #     #plot on graph. 
+        #     #labels points by class 
+
+
+
+        self.cleanresults.append({"logits":img_embed.detach(), "textlabels":scale_text_embed.detach()})
         loss = self.criterion(output_prompt, torch.arange(images.size(0), device=self.device))
 
         # measure accuracy and record loss
@@ -424,14 +432,18 @@ class myLightningModule(LightningModule):
         else:
             delta_prompt = self.attack_pgd(images, target, text,self.args.get("test_stepsize",2), self.args.get("test_numsteps",20), epsilon=self.args.get("test_eps",1))
 
-        prompt_token = self.add_prompter()
         # output_prompt_adv, _ = model(prompter(clip_img_preprocessing(images + delta_prompt)), text_tokens, prompt_token)
-        output_prompt_adv = multiGPU_CLIP( self.model,
-                                                    self.prompter(clip_img_preprocessing(images + delta_prompt)),
-                                                    text) #prommpt token is not used here.maybe should be?
+
+
+        img_embed=self.model.encode_image(clip_img_preprocessing(images + delta_prompt))
+        scale_text_embed=self.model.encode_text(text)
+        img_embed_norm = img_embed / img_embed.norm(dim=-1, keepdim=True)
+        scale_text_embed_norm = scale_text_embed / scale_text_embed.norm(dim=-1, keepdim=True)
+        output_prompt_adv = img_embed_norm @ scale_text_embed_norm.t()
+
 
         loss = self.criterion(output_prompt_adv, torch.arange(images.size(0),device=images.device)) #shoudl be torch arange(images.size(0), device=self.device)
-        self.attackedresults.append({"logits":output_prompt_adv, "labels":torch.arange(images.size(0), device=self.device)})
+        self.attackedresults.append({"logits":img_embed, "textlabels":scale_text_embed})
         # bl attack
         # torch.cuda.empty_cache()
 
@@ -447,9 +459,9 @@ class myLightningModule(LightningModule):
         #make linear probes here, and log the results.
         
         GoodLogits=torch.nan_to_num(torch.cat([val["logits"] for val in self.cleanresults],dim=0)).cpu().numpy()
-        GoodLabels=torch.cat([val["labels"] for val in self.cleanresults],dim=0).cpu().numpy()
+        GoodLabels=torch.cat([val["textlabels"] for val in self.cleanresults],dim=0).cpu().numpy()
         BadLogits=torch.nan_to_num(torch.cat([val["logits"] for val in self.attackedresults],dim=0)).cpu().numpy()
-        BadLabels=torch.cat([val["labels"] for val in self.attackedresults],dim=0).cpu().numpy()
+        BadLabels=torch.cat([val["textlabels"] for val in self.attackedresults],dim=0).cpu().numpy()
 
 
 
