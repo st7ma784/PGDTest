@@ -52,8 +52,8 @@ class myLightningModule(LightningModule):
         self.args = args
         add_prompt_len = 0 if args.get("add_prompt","none") == 'none' else 1
         self.upper_limit, self.lower_limit = 1, 0
-        self.model, _ = clip.load('ViT-B/32', device=self.device, jit=False)
-        self.model_ori, _ = clip.load('ViT-B/32', device=self.device, jit=False)
+        self.model, _ = clip.load('ViT-B/32', device=self.device, jit=False,download_root=self.args.get("imagenet_root","./data"))
+        self.model_ori, _ = clip.load('ViT-B/32', device=self.device, jit=False,download_root=self.args.get("imagenet_root","./data"))
         self.model_text, _= None, None
         self.prompter = NullPrompter()
         self.add_prompter = TokenPrompter(add_prompt_len)
@@ -394,6 +394,12 @@ class myLightningModule(LightningModule):
         prompt_token = None
         text=text.squeeze(1)      
         output_prompt= multiGPU_CLIP(self.model, self.prompter(images), text)
+        tosave=self.model.encode_image(images)
+        if batch_idx == 0:
+            #save the first batch of images to disk
+            #OR project into 2d using PCA and save that to disk
+            #plot on graph. 
+            #labels points by class 
         self.cleanresults.append({"logits":output_prompt, "labels":torch.arange(images.size(0), device=self.device)})
         loss = self.criterion(output_prompt, torch.arange(images.size(0), device=self.device))
 
@@ -444,6 +450,8 @@ class myLightningModule(LightningModule):
         GoodLabels=torch.cat([val["labels"] for val in self.cleanresults],dim=0).cpu().numpy()
         BadLogits=torch.nan_to_num(torch.cat([val["logits"] for val in self.attackedresults],dim=0)).cpu().numpy()
         BadLabels=torch.cat([val["labels"] for val in self.attackedresults],dim=0).cpu().numpy()
+
+
 
         if not hasattr(self,"Cleanclassifier"):
             self.Cleanclassifier = LogisticRegression(random_state=0, C=0.316, max_iter=1000, verbose=1, n_jobs=-1)
