@@ -17,25 +17,21 @@ import numpy as np
 
 
 def multiGPU_CLIP(model, images, text_tokens):
-    # prompt_token = prompt_token.repeat(images.size(0), 1, 1)
-    #print images without shape
+   
+    #images shape is (batch, 3, 224, 224)
+    #text_tokens shape is (batch, 77)
+    #the old shape was (C,77)
+    #this is why we dont use labels, and use arange instead. 
+
+
     img_embed=model.encode_image(images)
     scale_text_embed=model.encode_text(text_tokens)
     img_embed_norm = img_embed / img_embed.norm(dim=-1, keepdim=True)
     scale_text_embed_norm = scale_text_embed / scale_text_embed.norm(dim=-1, keepdim=True)
     logits_per_image = img_embed_norm @ scale_text_embed_norm.t()
     #logits_per_text = scale_text_embed_norm @ img_embed_norm.t()
-    return logits_per_image#, logits_per_text, img_embed, scale_text_embed
+    return logits_per_image#, logits_per_text, img_embed, scale_text_embed # the shape of output WAS (C,B) but now is (B,B) as we want.
 
-
-
-# def multiGPU_CLIP_NP(model, images, text_tokens):
-#     img_embed, scale_text_embed = model(images, text_tokens, None)
-#     img_embed_norm = img_embed / img_embed.norm(dim=-1, keepdim=True)
-#     scale_text_embed_norm = scale_text_embed / scale_text_embed.norm(dim=-1, keepdim=True)
-#     logits_per_image = img_embed_norm @ scale_text_embed_norm.t()
-#     #logits_per_text = scale_text_embed_norm @ img_embed_norm.t()
-#     return logits_per_image#, logits_per_text, img_embed, scale_text_embed
 
 ImageNet_MEAN = (0.485, 0.456, 0.406)
 ImageNet_STD = (0.229, 0.224, 0.225)
@@ -122,7 +118,69 @@ class myLightningModule(LightningModule):
         d = (d + scaled_g * alpha).view(d.size(0), -1).renorm(p=2, dim=0, maxnorm=eps).view_as(d)
         return d
     
-    
+        @torch.enable_grad()
+    def attack_text_pgd(self,  X, target, text_tokens, alpha, attack_iters, restarts=1, early_stop=True, epsilon=0):
+        delta=self.init_delta(text_tokens,epsilon)
+        self.insert_text_model_hook()
+        self.model.encode_text(text_tokens) #do this with hooks 
+        clean_features=self.text_features
+        for _ in range(attack_iters):
+
+            #step 1: modify text tokens
+            #step 2: pass through CLIP model module that saves features,
+            #step 3: Loss= cosine similarity of clean features to dirty features. 
+            #step 4: now consider loss. 
+            text_tokens+=delta
+            
+
+
+            img_embed=self.model.encode_image(X)
+            #ensure self.model has text hooks 
+            self.insert_text_model_hook()
+            scale_text_embed=self.model.encode_text(text_tokens)
+            features=self.text_features
+            #do Loss between each layer
+            text_loss=torch.zeros((X.shape[0],X.shape[0]),device=self.device)
+            for layer in features.keys():
+                itemA=features[layer]
+                itemB=clean_features[layer]
+                itemA=itemA/itemA.norm(dim=-1, keepdim=True)
+                itemB=itemB/itemB.norm(dim=-1, keepdim=True)
+                similarities= itemA@itemB.T  # should be B,B in shape, 
+                text_loss+=self.CETextLoss(similarities)
+            self.log("text_loss",text_loss)
+
+            #step 5: backpropagate, making noise closer to clean features
+            text_loss.backward()
+            #step 6: remove hooks and zero grad
+            self.remove_text_model_hook()
+            delta.grad.zero_()
+            
+
+            #step 7: now do attack as normal
+            d = delta
+
+            #I want to find a way to maximize the loss while minimizing text loss
+
+            img_embed_norm = img_embed / img_embed.norm(dim=-1, keepdim=True)
+            scale_text_embed_norm = scale_text_embed / scale_text_embed.norm(dim=-1, keepdim=True)
+            logits_per_image = img_embed_norm @ scale_text_embed_norm.t()
+            logits_per_text = scale_text_embed_norm @ img_embed_norm.t()
+            # logits_per_text, img_embed, scale_text_embed
+
+
+            loss = self.criterion(logits_per_text, torch.arange(prompted_images.size(0), device=self.device))
+            loss.backward()
+            self.log("attack_loss",loss)
+            grad = delta.grad.detach()
+            d = delta[:, :, :, :]
+            g = grad[:, :, :, :]
+            x = X[:, :, :, :]
+            d=self.clamp(d,alpha,g,epsilon)
+            d = clamp(d, self.lower_limit - x, self.upper_limit - x)
+            delta.data[:, :, :, :] = d
+            delta.grad.zero_()
+        return delta
     #insert function decorator to ensure this ALWAys has grad
     @torch.enable_grad()
     def attack_pgd(self,  X, target, text_tokens, alpha, attack_iters, restarts=1, early_stop=True, epsilon=0):
@@ -140,7 +198,7 @@ class myLightningModule(LightningModule):
             output = multiGPU_CLIP(self.model, prompted_images, text_tokens)#, prompt_token)
             loss = self.criterion(output, torch.arange(prompted_images.size(0), device=self.device))
             loss.backward()
-
+            self.log("attack_loss",loss)
             #Dear Afra, here is something you should probably log with self.log("attack_loss",loss)
             grad = delta.grad.detach()
             d = delta[:, :, :, :]
@@ -161,7 +219,7 @@ class myLightningModule(LightningModule):
             loss = self.criterion(output,  torch.arange(_images.size(0), device=self.device)) #edited from original paper to remove fixed target classes
             loss.backward()
             #Dear Afra, here is something you should probably log with self.log("attack_loss",loss)
-
+            self.log("attack_loss",loss)
             grad = delta.grad.detach()
             d = delta[:, :, :, :]
             g = grad[:, :, :, :]
@@ -189,7 +247,7 @@ class myLightningModule(LightningModule):
             loss = - torch.sum(F.relu(correct_logit - wrong_logit + 50))
             loss.backward()
             #Dear Afra, here is something you should probably log with self.log("attack_loss",loss)
-
+            self.log("attack_loss",loss)
             grad = delta.grad.detach()
             d = delta[:, :, :, :]
             g = grad[:, :, :, :]
@@ -215,7 +273,7 @@ class myLightningModule(LightningModule):
             # loss = criterion(output, target)
             loss = - torch.sum(F.relu(correct_logit - wrong_logit + 50))
             #Dear Afra, here is something you should probably log with self.log("attack_loss",loss)
-
+            self.log("attack_loss",loss)
             loss.backward()
             grad = delta.grad.detach()
             d = delta[:, :, :, :]

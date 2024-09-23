@@ -162,6 +162,15 @@ class CustomtorchVisionDataset2(Dataset):
 
         return image, label, text 
 
+
+
+'''
+Add COCO captions here ...
+
+
+
+
+'''
 class MyDataModule(pl.LightningDataModule):
     def __init__(self,Cache_dir, dataset: str,batch_size: int,imagenet_root: str="none", tinyimagenet_root: str="none",  val_dataset_names: List[str]=None,**kwargs):
         super().__init__()
