@@ -200,7 +200,7 @@ class myLightningModule(LightningModule):
             output = img_embed_norm @ scale_text_embed_norm.t()
             loss = self.criterion(output, torch.arange(prompted_images.size(0), device=self.device))
             loss.backward()
-            losses.append(loss.detach())
+            losses.append(loss)
             grad = delta.grad.detach()
             d = delta[:, :, :, :]
             g = grad[:, :, :, :]
