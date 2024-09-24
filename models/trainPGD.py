@@ -364,11 +364,11 @@ class myLightningModule(LightningModule):
 
         logits_per_dirty_image = output_of_training_model_with_dirty_images @ text_embed.T
         loss_on_training_model_with_dirty_images = self.criterion(logits_per_dirty_image, torch.arange(images.size(0), device=self.device)) # the output of this is huge compared to others. 
-        self.log("loss_on_training_model_clean_images (no grad)",self.criterion(logits_of_training_model_with_clean_images, torch.arange(images.size(0), device=self.device)))
-        self.log("loss_on_training_model_with_dirty_images",loss_on_training_model_with_dirty_images)
-        self.log("loss_between_our_training_model_and_pretrained_on_clean_images",loss_between_our_training_model_and_pretrained_on_clean_images )
-        self.log("loss_between_dirty_and_clean_images_on_training_model",loss_between_dirty_and_clean_images_on_training_model )
-        self.log("loss_between_our_training_model_and_pretrained_on_dirty_images",loss_between_our_training_model_and_pretrained_on_dirty_images )
+        self.log("Loss on training model with clean images (no grad)",self.criterion(logits_of_training_model_with_clean_images, torch.arange(images.size(0), device=self.device)))
+        self.log("Loss on training model with dirty images",loss_on_training_model_with_dirty_images)
+        self.log("Loss between our training model and pretrained on clean images",loss_between_our_training_model_and_pretrained_on_clean_images )
+        self.log("Loss on training model with dirty and clean images",loss_between_dirty_and_clean_images_on_training_model )
+        self.log("Loss between our training model and pretrained on dirty images(no_grad)",loss_between_our_training_model_and_pretrained_on_dirty_images )
 
         loss=loss_on_training_model_with_dirty_images + loss_between_dirty_and_clean_images_on_training_model + loss_between_our_training_model_and_pretrained_on_clean_images #+ loss_between_our_training_model_and_pretrained_on_dirty_images
         
@@ -425,8 +425,8 @@ class myLightningModule(LightningModule):
 
         # measure accuracy and record loss
         acc1 = accuracy(output_prompt, torch.arange(images.shape[0],device=images.device), topk=(1,))
-        self.log('val_clean_loss', loss.detach(), on_step=True, on_epoch=True, prog_bar=True, logger=True)
-        self.log('val_clean_acc', acc1[0].item(), on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        self.log('val_clean_batch_loss', loss.detach(), on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        self.log('val_clean_batch_acc', acc1[0].item(), on_step=True, on_epoch=True, prog_bar=True, logger=True)
 
         if self.args.get("CW",False):
             delta_prompt = self.attack_CW(
@@ -461,8 +461,8 @@ class myLightningModule(LightningModule):
 
         # measure accuracy and record loss
         acc1 = accuracy(output_prompt_adv, torch.arange(images.size(0),device=images.device), topk=(1,))
-        self.log('val_dirty_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
-        self.log('val_dirty_acc', acc1[0].item(), on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        self.log('val_dirty_batch_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        self.log('val_dirty_batch_acc', acc1[0].item(), on_step=True, on_epoch=True, prog_bar=True, logger=True)
         
 
         return loss
@@ -481,7 +481,7 @@ class myLightningModule(LightningModule):
             self.Cleanclassifier = LogisticRegression(random_state=0, C=0.316, max_iter=1000, verbose=1, n_jobs=-1)
         if not hasattr(self,"Dirtyclassifier"):
             self.Dirtyclassifier = LogisticRegression(random_state=0, C=0.316, max_iter=1000, verbose=1, n_jobs=-1)
-        if not hasattr(self,"general classifier"):
+        if not hasattr(self,"generalclassifier"):
             self.generalclassifier = LogisticRegression(random_state=0, C=0.316, max_iter=1000, verbose=1, n_jobs=-1)
         self.Dirtyclassifier.fit(BadLogits, BadLabels)
         self.Cleanclassifier.fit(GoodLogits, GoodLabels)
