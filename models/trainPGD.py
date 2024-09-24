@@ -314,7 +314,7 @@ class myLightningModule(LightningModule):
         #The batch is collated for you, so just seperate it here and calculate loss. 
         #By default, PTL handles optimization and scheduling and logging steps. so All you have to focus on is functionality. Here's an example...
         images, target,text = batch #label shouldnt be used here! 
-        print(text.shape)
+        #print(text.shape)
         # text=text.squeeze(1)
         text_embed=self.model.encode_text(text)
         # ori_text_embed=self.model_ori.encode_text(text)
@@ -403,9 +403,9 @@ class myLightningModule(LightningModule):
         images, target,text = batch
         #a is the image, b is the target
         #get the datamodule text list to lookup the text embeddings.s
-        print(text.shape)
+        #print(text.shape)
         prompt_token = None
-        # text=text.squeeze(1)      
+        text=text.squeeze(1)      
 
         
         img_embed=self.model.encode_image(images)
