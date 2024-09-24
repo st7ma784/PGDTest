@@ -242,7 +242,7 @@ class myLightningModule(LightningModule):
         for _ in range(attack_iters):
             # output = model(normalize(X ))
             prompted_images = self.prompter(normalize(X + delta))
-            prompt_token = self.add_prompter()
+            # prompt_token = self.add_prompter()
             output= multiGPU_CLIP(self.model, prompted_images, text_tokens)#, prompt_token)
             
             
@@ -315,8 +315,11 @@ class myLightningModule(LightningModule):
         #By default, PTL handles optimization and scheduling and logging steps. so All you have to focus on is functionality. Here's an example...
         images, target,text = batch #label shouldnt be used here! 
         text=text.squeeze(1)
-
-        images = self.prompter(images) #does nothing - its a null prompter
+        text_embed=self.model.encode_text(text)
+        # ori_text_embed=self.model_ori.encode_text(text)
+        text_embed= text_embed/ text_embed.norm(dim=-1, keepdim=True)
+        # ori_text_embed= ori_text_embed/ ori_text_embed.norm(dim=-1, keepdim=True)
+        # images = self.prompter(images) #does nothing - its a null prompter
         Dirtyimages=self.attack(images, target, text, self.args.get("alpha",1), self.args.get("attack_iters",5), epsilon=self.args.get("train_eps",1))
         '''
         Here's where you run the dirty image through your model... first through an encoder, then through a decoder.
@@ -328,14 +331,17 @@ class myLightningModule(LightningModule):
         '''
         Dirtyimages = torch.div(torch.sub(Dirtyimages, self.mu_img), self.std_img) #normalize(Dirtyimages) but preserves grad
         # prompted_Dirtyimages = self.prompter(normalize(Dirtyimages)) #does nothing - its a null prompter
-        output_of_training_model_with_dirty_images= multiGPU_CLIP( self.model, Dirtyimages, text)
-        output_of_pretrained_model_with_dirty_images= multiGPU_CLIP( self.model_ori, Dirtyimages, text)
+        output_of_training_model_with_dirty_images= self.model.encode_image(Dirtyimages) 
+        output_of_training_model_with_dirty_images= output_of_training_model_with_dirty_images/ output_of_training_model_with_dirty_images.norm(dim=-1, keepdim=True)
+        output_of_training_model_with_clean_images= self.model.encode_image(images)
+        output_of_training_model_with_clean_images= output_of_training_model_with_clean_images/ output_of_training_model_with_clean_images.norm(dim=-1, keepdim=True)
+        output_of_pretrained_model_with_dirty_images= self.model_ori.encode_image(Dirtyimages)
+        output_of_pretrained_model_with_dirty_images= output_of_pretrained_model_with_dirty_images/ output_of_pretrained_model_with_dirty_images.norm(dim=-1, keepdim=True)
         '''
         we would assume if the attack is successful, the model would be more confident in the wrong class, so we can do the following check:
         Loss_to_see_attack_success = self.CrossEntropy_loss(output_of_training_model_with_dirty_images, torch.arange(images.size(0), device=self.device))
 
         '''
-        output_of_training_model_with_clean_images = multiGPU_CLIP( self.model, images, text)
         #This loss stops the divergence of the model from the pretrained model.
         loss_between_our_training_model_and_pretrained_on_dirty_images = self.criterion_kl(F.log_softmax(output_of_training_model_with_dirty_images, dim=1), F.softmax(output_of_pretrained_model_with_dirty_images, dim=1))
         
@@ -351,14 +357,16 @@ class myLightningModule(LightningModule):
           (something to try by adding arguments to the demoparse.py file, then setting in the lightning module init.)
         
         '''
+        logits_of_training_model_with_clean_images = output_of_training_model_with_clean_images @ text_embed.T
 
-        loss_on_training_model_with_dirty_images = self.criterion(output_of_training_model_with_dirty_images, torch.arange(images.size(0), device=self.device)) # the output of this is huge compared to others. 
-
+        logits_per_dirty_image = output_of_training_model_with_dirty_images @ text_embed.T
+        loss_on_training_model_with_dirty_images = self.criterion(logits_per_dirty_image, torch.arange(images.size(0), device=self.device)) # the output of this is huge compared to others. 
+        self.log("loss_on_training_model_clean_images",self.criterion(logits_of_training_model_with_clean_images, torch.arange(images.size(0), device=self.device)))
         self.log("loss_on_training_model_with_dirty_images",loss_on_training_model_with_dirty_images)
-        self.log("loss_between_dirty_and_clean_images_on_training_model",loss_between_dirty_and_clean_images_on_training_model  *200)
-        self.log("loss_between_our_training_model_and_pretrained_on_dirty_images",loss_between_our_training_model_and_pretrained_on_dirty_images*200 )
+        self.log("loss_between_dirty_and_clean_images_on_training_model",loss_between_dirty_and_clean_images_on_training_model )
+        self.log("loss_between_our_training_model_and_pretrained_on_dirty_images",loss_between_our_training_model_and_pretrained_on_dirty_images )
 
-        loss=loss_on_training_model_with_dirty_images + loss_between_dirty_and_clean_images_on_training_model*200 + loss_between_our_training_model_and_pretrained_on_dirty_images*200
+        loss=loss_on_training_model_with_dirty_images + loss_between_dirty_and_clean_images_on_training_model + loss_between_our_training_model_and_pretrained_on_dirty_images
         
         #self.model.logit_scale.data = torch.clamp(self.model.logit_scale.data, 0, 4.6052)
 
