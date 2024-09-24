@@ -14,7 +14,8 @@ from torchattacks import AutoAttack
 from utils import clip_img_preprocessing
 from sklearn.linear_model import LogisticRegression
 import numpy as np
-
+#get default dict for logging
+from collections import defaultdict
 
 def multiGPU_CLIP(model, images, text_tokens):
    
