@@ -82,7 +82,7 @@ def wandbtrain(config=None,dir=None,devices=None,accelerator=None,Dataset=None):
         config=config.__dict__
         dir=config.get("dir",dir)
         wandb.login(key=os.getenv("WANDB_API_KEY","9cf7e97e2460c18a89429deed624ec1cbfb537bc")) #<-----CHANGE ME
-        logtool= pytorch_lightning.loggers.WandbLogger( project=PROJECT,entity=USER, save_dir=dir)                               #<-----CHANGE ME
+        logtool= pytorch_lightning.loggers.WandbLogger( project=PROJECT,entity=USER, save_dir=os.getenv("WANDB_CACHE_DIR","."))                               #<-----CHANGE ME
         print(config)
 
     else:
@@ -101,7 +101,7 @@ def wandbtrain(config=None,dir=None,devices=None,accelerator=None,Dataset=None):
             run=wandb.init(project=PROJECT,entity=USER,name=NAME,config=config)                                           #<-----CHANGE ME      
 
         #os.environ["WANDB_API_KEY"]="9cf7e97e2460c18a89429deed624ec1cbfb537bc"  
-        logtool= pytorch_lightning.loggers.WandbLogger( project=PROJECT,entity=USER,experiment=run, save_dir=dir)                 #<-----CHANGE ME
+        logtool= pytorch_lightning.loggers.WandbLogger( project=PROJECT,entity=USER,experiment=run, save_dir=os.getenv("WANDB_CACHE_DIR","."))                 #<-----CHANGE ME
         config=run.config.as_dict()
 
     train(config,dir,devices,accelerator,Dataset,logtool)
