@@ -191,16 +191,11 @@ class myLightningModule(LightningModule):
             #prompted_images = self.prompter(normalize(delta + X ))
             #check prompted images has grad
             new_images = delta+X
-          
             prompted_images = torch.div(torch.sub(new_images, self.mu_img), self.std_img) #normalize(new_images) but preserves grad
-            assert prompted_images.requires_grad
-            
-            #prompt_token = self.add_prompter()
             output = multiGPU_CLIP(self.model, prompted_images, text_tokens)#, prompt_token)
             loss = self.criterion(output, torch.arange(prompted_images.size(0), device=self.device))
             loss.backward()
-            losses.append(loss)
-            #Dear Afra, here is something you should probably log with self.log("attack_loss",loss)
+            losses.append(loss.detach())
             grad = delta.grad.detach()
             d = delta[:, :, :, :]
             g = grad[:, :, :, :]
