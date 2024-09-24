@@ -187,7 +187,6 @@ class myLightningModule(LightningModule):
     def attack_pgd(self,  X, target, text_tokens, alpha, attack_iters, restarts=1, early_stop=True, epsilon=0):
         delta=self.init_delta(X,epsilon)
         losses=[]
-        self.model.eval()
         
         for _ in range(attack_iters):
             # output = model(normalize(X ))
@@ -216,7 +215,6 @@ class myLightningModule(LightningModule):
         self.log("mean_attack_losses",sum(losses)/len(losses))
         self.log("max_attack_loss",max(losses))
         self.log("min_attack_loss",min(losses))
-        self.model.train()
         return delta
     
     @torch.enable_grad()
