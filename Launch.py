@@ -101,7 +101,7 @@ def SlurmRun(trialconfig):
         '#SBATCH --gres=gpu:1',  #{}'.format(per_experiment_nb_gpus),
         f'#SBATCH --signal=USR1@{5 * 60}',
         '#SBATCH --mail-type={}'.format(','.join(['END','FAIL'])),
-        '#SBATCH --mail-user={}'.format('YOURMAIL@gmail.com'),                                                                                   #<-----CHANGE ME
+        '#SBATCH --mail-user={}'.format('st7ma784@gmail.com'),                                                                                   #<-----CHANGE ME
     ]
     comm="python"
     slurm_commands={}
