@@ -193,7 +193,7 @@ class myLightningModule(LightningModule):
             # output = model(normalize(X ))
             #prompted_images = self.prompter(normalize(delta + X ))
             #check prompted images has grad
-            new_images = delta+Xf
+            new_images = delta+X
             prompted_images = torch.div(torch.sub(new_images, self.mu_img), self.std_img) #normalize(new_images) but preserves grad
             img_embed=self.model.encode_image(prompted_images)
             img_embed_norm = img_embed / img_embed.norm(dim=-1, keepdim=True)
