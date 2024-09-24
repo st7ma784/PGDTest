@@ -76,15 +76,17 @@ def wandbtrain(config=None,dir=None,devices=None,accelerator=None,Dataset=None):
     PROJECT="AllDataPGN"
     NAME="TestDeploy"
     import pytorch_lightning
+    import wandb
+
     if config is not None:
         config=config.__dict__
         dir=config.get("dir",dir)
+        wandb.login(key=os.getenv("WANDB_API_KEY","9cf7e97e2460c18a89429deed624ec1cbfb537bc")) #<-----CHANGE ME
         logtool= pytorch_lightning.loggers.WandbLogger( project=PROJECT,entity=USER, save_dir=dir)                               #<-----CHANGE ME
         print(config)
 
     else:
         #We've got no config, so we'll just use the default, and hopefully a trainAgent has been passed
-        import wandb
         print("Would recommend changing projectname according to config flags if major version swithching happens")
         try:
             run=wandb.init(project=PROJECT,entity=USER,name=NAME,config=config)                                           #<-----CHANGE ME      
@@ -93,6 +95,7 @@ def wandbtrain(config=None,dir=None,devices=None,accelerator=None,Dataset=None):
             if "WANDB_API_KEY" not in os.environ:
                 if "wandb" in os.environ:
                     os.environ["WANDB_API_KEY"]=os.environ["wandb"]
+                    wandb.login(key=os.getenv("WANDB_API_KEY","9cf7e97e2460c18a89429deed624ec1cbfb537bc")) #<-----CHANGE ME
                 else:
                     print("No API key found, please set WANDB_API_KEY in environment variables")
             run=wandb.init(project=PROJECT,entity=USER,name=NAME,config=config)                                           #<-----CHANGE ME      
@@ -138,6 +141,7 @@ def SlurmRun(trialconfig):
     sub_commands.extend([
         'export SLURM_NNODES=$SLURM_JOB_NUM_NODES',
         'export wandb=9cf7e97e2460c18a89429deed624ec1cbfb537bc',
+        'export WANDB_API_KEY=9cf7e97e2460c18a89429deed624ec1cbfb537bc',
         'export ISHEC=True'                                                                               #<-----CHANGE ME                                         
         'source /etc/profile',
         'module add opence',
