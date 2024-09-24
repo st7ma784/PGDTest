@@ -361,7 +361,7 @@ class myLightningModule(LightningModule):
 
         logits_per_dirty_image = output_of_training_model_with_dirty_images @ text_embed.T
         loss_on_training_model_with_dirty_images = self.criterion(logits_per_dirty_image, torch.arange(images.size(0), device=self.device)) # the output of this is huge compared to others. 
-        self.log("loss_on_training_model_clean_images",self.criterion(logits_of_training_model_with_clean_images, torch.arange(images.size(0), device=self.device)))
+        self.log("loss_on_training_model_clean_images (no grad)",self.criterion(logits_of_training_model_with_clean_images, torch.arange(images.size(0), device=self.device)))
         self.log("loss_on_training_model_with_dirty_images",loss_on_training_model_with_dirty_images)
         self.log("loss_between_dirty_and_clean_images_on_training_model",loss_between_dirty_and_clean_images_on_training_model )
         self.log("loss_between_our_training_model_and_pretrained_on_dirty_images",loss_between_our_training_model_and_pretrained_on_dirty_images )
