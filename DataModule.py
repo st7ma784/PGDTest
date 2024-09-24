@@ -153,6 +153,7 @@ class CustomtorchVisionDataset2(Dataset):
         try:
 
             text = self.tokenized_texts[label] #A picture of {label}
+            print("text:",text.shape)
         except:
             print("Error in getting text")
             print("label:",label)
