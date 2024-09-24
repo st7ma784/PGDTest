@@ -25,7 +25,7 @@ from torchvision.datasets import CIFAR10, CIFAR100, ImageFolder
 from torchvision.datasets.folder import default_loader
 from PIL import Image
 from typing import List
-from utils import to_rgb,load_imagenet_label2folder
+from utils import to_rgb,load_imagenet_label2folder,refine_classname
 import torchvision.transforms as transforms
 import pytorch_lightning as pl
 
