@@ -334,10 +334,10 @@ class MyDataModule(pl.LightningDataModule):
                 val_dataset_dict.update({'cifar100': CIFAR100(root=self.imagenet_root, transform=self.preprocess, download=download, train=False)})
             if 'Caltech101'in self.val_dataset_names:
                 val_dataset_dict.update({'Caltech101': Caltech101(root=self.imagenet_root, target_type='category', transform=self.preprocess, download=download)})
-            if 'PCAM' in self.val_dataset_names:
-                val_dataset_dict.update({'PCAM': PCAM(root=self.imagenet_root, split='test', transform=self.preprocess, download=download)})
-                    # val_dataset_list.append(PCAM(root=self.imagenet_root, split='test', transform=preprocess224,
-                    #                                 download=True))
+            # if 'PCAM' in self.val_dataset_names:
+            #     val_dataset_dict.update({'PCAM': PCAM(root=self.imagenet_root, split='test', transform=self.preprocess, download=download)})
+            #         # val_dataset_list.append(PCAM(root=self.imagenet_root, split='test', transform=preprocess224,
+            #         #                                 download=True))
             if 'STL10' in self.val_dataset_names:
                 val_dataset_dict.update({'STL10': STL10(root=self.imagenet_root, split='test', transform=self.preprocess, download=download)})
                    
@@ -364,10 +364,10 @@ class MyDataModule(pl.LightningDataModule):
             #     val_dataset_dict.update({'Caltech256': Caltech256(root=self.imagenet_root, transform=self.preprocess, download=True)})
             #         # val_dataset_list.append(Caltech256(root=self.imagenet_root, transform=preprocess224,
                                                         # download=True))
-            if 'flowers102' in self.val_dataset_names:
-                val_dataset_dict.update({'flowers102': Flowers102(root=self.imagenet_root, split='test', transform=self.preprocess, download=download)})
-                    # val_dataset_list.append(Flowers102(root=self.imagenet_root, split='test',
-                                                        # transform=preprocess224, download=True))
+            # if 'flowers102' in self.val_dataset_names:
+            #     val_dataset_dict.update({'flowers102': Flowers102(root=self.imagenet_root, split='test', transform=self.preprocess, download=download)})
+            #         # val_dataset_list.append(Flowers102(root=self.imagenet_root, split='test',
+            #                                             # transform=preprocess224, download=True))
             if 'Country211' in self.val_dataset_names:
                 val_dataset_dict.update({'Country211': Country211(root=self.imagenet_root, split='test', transform=self.preprocess, download=download)})
                     # val_dataset_list.append(Country211(root=self.imagenet_root, split='test',
