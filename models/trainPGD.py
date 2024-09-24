@@ -201,7 +201,7 @@ class myLightningModule(LightningModule):
             loss = self.criterion(output, torch.arange(prompted_images.size(0), device=self.device))
             loss.backward()
             losses.append(loss)
-            grad = delta.grad.detach()
+            grad = delta.grad#.detach()
             d = delta[:, :, :, :]
             g = grad[:, :, :, :]
             x = X[:, :, :, :]
