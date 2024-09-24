@@ -186,10 +186,8 @@ class myLightningModule(LightningModule):
     def attack_pgd(self,  X, target, text_tokens, alpha, attack_iters, restarts=1, early_stop=True, epsilon=0):
         delta=self.init_delta(X,epsilon)
         losses=[]
-
         scale_text_embed=self.model.encode_text(text_tokens)
         scale_text_embed_norm = scale_text_embed / scale_text_embed.norm(dim=-1, keepdim=True)
-
         for _ in range(attack_iters):
             # output = model(normalize(X ))
             #prompted_images = self.prompter(normalize(delta + X ))
@@ -199,7 +197,6 @@ class myLightningModule(LightningModule):
             img_embed=self.model.encode_image(prompted_images)
             img_embed_norm = img_embed / img_embed.norm(dim=-1, keepdim=True)
             output = img_embed_norm @ scale_text_embed_norm.t()
-
             loss = self.criterion(output, torch.arange(prompted_images.size(0), device=self.device))
             loss.backward()
             losses.append(loss.detach())
