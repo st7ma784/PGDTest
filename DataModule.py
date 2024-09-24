@@ -157,8 +157,6 @@ class CustomtorchVisionDataset2(Dataset):
         except:
             print("Error in getting text")
             print("label:",label)
-            print("texts:",self.tokenized_texts)
-            print("idx:",idx)
             print("len of dataset:",len(self.dataset))
             print("len of texts:",len(self.tokenized_texts))
             # text="A picture of something"
