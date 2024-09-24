@@ -95,7 +95,7 @@ class baseparser(HyperOptArgumentParser):
         # model
         self.opt_list("--freeze_text",default=True,options=[True,False],type=bool,tunable=True)
         self.opt_list("--model", default='clip', type=str, tunable=False)
-        self.opt_list("--imagenet_root", default=os.getenv("global_storage","./data"),options=[os.getenv("global_storage","")], type=str, tunable=True)
+        self.opt_list("--imagenet_root", default=os.getenv("global_storage","./data"),options=[os.getenv("global_storage","./data")], type=str, tunable=False)
         self.opt_list("--arch", default='vit_b32', type=str, tunable=False)
         self.opt_list("--method", default='null_patch', type=str, options=['null_patch'], tunable=False)
         self.opt_list("--prompt_size", default=30, type=int, tunable=False)
