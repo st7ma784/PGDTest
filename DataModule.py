@@ -203,7 +203,7 @@ class MyDataModule(pl.LightningDataModule):
         self.ISHEC=os.getenv("ISHEC",False)
         self.tokenizer=clip.tokenize
         self.default=self.tokenizer("A picture of something")
-        
+        #hopefully this reduces memory needs 
     def prepare_data(self):
         # No preparation needed
         self.setup(download=True)
