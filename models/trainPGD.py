@@ -393,11 +393,11 @@ class myLightningModule(LightningModule):
     def on_validation_epoch_start(self):
         self.mu_img = torch.tensor((0.485, 0.456, 0.406)).view(3,1,1).to(self.device)
         self.std_img = torch.tensor((0.229, 0.224, 0.225)).view(3,1,1).to(self.device)
-        self.cleanresults=[]
-        self.attackedresults=[]
+        self.cleanresults=defaultdict(list)
+        self.attackedresults=defaultdict(list)
         self.data_loader_count = len(self.trainer.datamodule.val_dataloader())
 
-    def validation_step(self, batch, batch_idx, *args, **kwargs):
+    def validation_step(self, batch, batch_idx,  dataloader_idx=0, *args, **kwargs):
         images, target,text = batch
         #a is the image, b is the target
         #get the datamodule text list to lookup the text embeddings.s
@@ -419,7 +419,7 @@ class myLightningModule(LightningModule):
 
 
 
-        self.cleanresults.append({"logits":img_embed.detach(), "textlabels":target}) #using target like this is fine because each dataloader is tested and logged independently.
+        self.cleanresults[dataloader_idx].append({"logits":img_embed.detach(), "textlabels":target}) #using target like this is fine because each dataloader is tested and logged independently.
         loss = self.criterion(output_prompt, torch.arange(images.size(0), device=self.device))
 
         # measure accuracy and record loss
@@ -454,7 +454,7 @@ class myLightningModule(LightningModule):
 
 
         loss = self.criterion(output_prompt_adv, torch.arange(images.size(0),device=images.device)) #shoudl be torch arange(images.size(0), device=self.device)
-        self.attackedresults.append({"logits":img_embed, "textlabels":target})
+        self.attackedresults[dataloader_idx].append({"logits":img_embed, "textlabels":target})
         # bl attack
         # torch.cuda.empty_cache()
 
@@ -469,31 +469,29 @@ class myLightningModule(LightningModule):
 
         #make linear probes here, and log the results.
         
-        GoodLogits=torch.nan_to_num(torch.cat([val["logits"] for val in self.cleanresults],dim=0)).cpu().numpy()
-        GoodLabels=torch.cat([val["textlabels"] for val in self.cleanresults],dim=0).cpu().numpy()
-        BadLogits=torch.nan_to_num(torch.cat([val["logits"] for val in self.attackedresults],dim=0)).cpu().numpy()
-        BadLabels=torch.cat([val["textlabels"] for val in self.attackedresults],dim=0).cpu().numpy()
-
-
 
         if not hasattr(self,"Cleanclassifier"):
-            self.Cleanclassifier = LogisticRegression(random_state=0, C=0.316, max_iter=1000, verbose=1, n_jobs=-1)
+            self.Cleanclassifier = LogisticRegression(random_state=0, C=0.316, max_iter=100, verbose=0, n_jobs=-1)
         if not hasattr(self,"Dirtyclassifier"):
-            self.Dirtyclassifier = LogisticRegression(random_state=0, C=0.316, max_iter=1000, verbose=1, n_jobs=-1)
+            self.Dirtyclassifier = LogisticRegression(random_state=0, C=0.316, max_iter=100, verbose=0, n_jobs=-1)
         if not hasattr(self,"generalclassifier"):
-            self.generalclassifier = LogisticRegression(random_state=0, C=0.316, max_iter=1000, verbose=1, n_jobs=-1)
-        self.Dirtyclassifier.fit(BadLogits, BadLabels)
-        self.Cleanclassifier.fit(GoodLogits, GoodLabels)
-
-        self.log( "Clean Classifier on Dirty Features",self.Cleanclassifier.score(BadLogits, BadLabels))
-        self.log( "Dirty Classifier on Clean Features",self.Dirtyclassifier.score(GoodLogits, GoodLabels))
-        self.log( "Clean Classifier on Clean Features",self.Cleanclassifier.score(GoodLogits, GoodLabels))
-        self.log( "Dirty Classifier on Dirty Features",self.Dirtyclassifier.score(BadLogits, BadLabels))
-        
-        self.generalclassifier.fit(np.concatenate([GoodLogits,BadLogits]), np.concatenate([GoodLabels,BadLabels]))
-        self.log( "General Classifier on Dirty Features",self.generalclassifier.score(BadLogits, BadLabels))
-        self.log( "General Classifier on Clean Features",self.generalclassifier.score(GoodLogits, GoodLabels))
-        self.log( "General Classifier on All Features",self.generalclassifier.score(np.concatenate([GoodLogits,BadLogits]), np.concatenate([GoodLabels,BadLabels])))
+            self.generalclassifier = LogisticRegression(random_state=0, C=0.316, max_iter=100, verbose=0, n_jobs=-1)
+            #we've selected 100 based on where it plateaus in the first few runs. 
+        for dataset_idx in range(self.data_loader_count):
+            GoodLabels=torch.cat([val["textlabels"] for val in self.cleanresults[dataset_idx]],dim=0).cpu().numpy()
+            GoodLogits=torch.nan_to_num(torch.cat([val["logits"] for val in self.cleanresults[dataset_idx]],dim=0)).cpu().numpy()
+            BadLabels=torch.cat([val["textlabels"] for val in self.attackedresults[dataset_idx]],dim=0).cpu().numpy()
+            BadLogits=torch.nan_to_num(torch.cat([val["logits"] for val in self.attackedresults[dataset_idx]],dim=0)).cpu().numpy()
+            self.Dirtyclassifier.fit(BadLogits, BadLabels)
+            self.Cleanclassifier.fit(GoodLogits, GoodLabels)
+            self.log( "Clean Classifier on Dirty Features on dataset {dataset_idx}",self.Cleanclassifier.score(BadLogits, BadLabels))
+            self.log( "Dirty Classifier on Clean Features on dataset {dataset_idx}",self.Dirtyclassifier.score(GoodLogits, GoodLabels))
+            self.log( "Clean Classifier on Clean Features on dataset {dataset_idx}",self.Cleanclassifier.score(GoodLogits, GoodLabels))
+            self.log( "Dirty Classifier on Dirty Features on dataset {dataset_idx}",self.Dirtyclassifier.score(BadLogits, BadLabels))
+            self.generalclassifier.fit(np.concatenate([GoodLogits,BadLogits]), np.concatenate([GoodLabels,BadLabels]))
+            self.log( "General Classifier on Dirty Features on dataset {dataset_idx}",self.generalclassifier.score(BadLogits, BadLabels))
+            self.log( "General Classifier on Clean Features on dataset {dataset_idx}",self.generalclassifier.score(GoodLogits, GoodLabels))
+            self.log( "General Classifier on All Features on dataset {dataset_idx}",self.generalclassifier.score(np.concatenate([GoodLogits,BadLogits]), np.concatenate([GoodLabels,BadLabels])))
 
         #this should give us PLENTY of data to write about! 
         
