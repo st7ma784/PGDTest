@@ -337,6 +337,8 @@ class myLightningModule(LightningModule):
         output_of_training_model_with_clean_images= output_of_training_model_with_clean_images/ output_of_training_model_with_clean_images.norm(dim=-1, keepdim=True)
         output_of_pretrained_model_with_dirty_images= self.model_ori.encode_image(Dirtyimages)
         output_of_pretrained_model_with_dirty_images= output_of_pretrained_model_with_dirty_images/ output_of_pretrained_model_with_dirty_images.norm(dim=-1, keepdim=True)
+        output_of_pretrained_model_with_clean_images= self.model_ori.encode_image(images)
+        output_of_pretrained_model_with_clean_images= output_of_pretrained_model_with_clean_images/ output_of_pretrained_model_with_clean_images.norm(dim=-1, keepdim=True)
         '''
         we would assume if the attack is successful, the model would be more confident in the wrong class, so we can do the following check:
         Loss_to_see_attack_success = self.CrossEntropy_loss(output_of_training_model_with_dirty_images, torch.arange(images.size(0), device=self.device))
@@ -344,6 +346,7 @@ class myLightningModule(LightningModule):
         '''
         #This loss stops the divergence of the model from the pretrained model.
         loss_between_our_training_model_and_pretrained_on_dirty_images = self.criterion_kl(F.log_softmax(output_of_training_model_with_dirty_images, dim=1), F.softmax(output_of_pretrained_model_with_dirty_images, dim=1))
+        loss_between_our_training_model_and_pretrained_on_clean_images = self.criterion_kl(F.log_softmax(output_of_training_model_with_clean_images, dim=1), F.softmax(output_of_pretrained_model_with_clean_images, dim=1))
         
         #This loss stops the divergence of the model from the clean images.
         loss_between_dirty_and_clean_images_on_training_model = self.criterion_kl(F.log_softmax(output_of_training_model_with_dirty_images, dim=1), F.softmax(output_of_training_model_with_clean_images, dim=1))
@@ -363,10 +366,11 @@ class myLightningModule(LightningModule):
         loss_on_training_model_with_dirty_images = self.criterion(logits_per_dirty_image, torch.arange(images.size(0), device=self.device)) # the output of this is huge compared to others. 
         self.log("loss_on_training_model_clean_images (no grad)",self.criterion(logits_of_training_model_with_clean_images, torch.arange(images.size(0), device=self.device)))
         self.log("loss_on_training_model_with_dirty_images",loss_on_training_model_with_dirty_images)
+        self.log("loss_between_our_training_model_and_pretrained_on_clean_images",loss_between_our_training_model_and_pretrained_on_clean_images )
         self.log("loss_between_dirty_and_clean_images_on_training_model",loss_between_dirty_and_clean_images_on_training_model )
         self.log("loss_between_our_training_model_and_pretrained_on_dirty_images",loss_between_our_training_model_and_pretrained_on_dirty_images )
 
-        loss=loss_on_training_model_with_dirty_images + loss_between_dirty_and_clean_images_on_training_model + loss_between_our_training_model_and_pretrained_on_dirty_images
+        loss=loss_on_training_model_with_dirty_images + loss_between_dirty_and_clean_images_on_training_model + loss_between_our_training_model_and_pretrained_on_clean_images #+ loss_between_our_training_model_and_pretrained_on_dirty_images
         
         #self.model.logit_scale.data = torch.clamp(self.model.logit_scale.data, 0, 4.6052)
 
