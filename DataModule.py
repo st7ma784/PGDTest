@@ -156,10 +156,10 @@ class CustomtorchVisionDataset2(Dataset):
         except:
             print("Error in getting text")
             print("label:",label)
-            print("texts:",self.texts)
+            print("texts:",self.tokenized_text)
             print("idx:",idx)
             print("len of dataset:",len(self.dataset))
-            print("len of texts:",len(self.texts))
+            print("len of texts:",len(self.tokenized_text))
             # text="A picture of something"
         # text = self.tokenizer(text) #should be 77 long
         #i keep getting an error saying it's resizing non-resizable storage. This is caused because the image is not in RGB format. ? 
