@@ -127,6 +127,7 @@ def SlurmRun(trialconfig):
         sub_commands.extend([
                 '#SBATCH --account MYACOCUNT',
                 'export CONDADIR=/nobackup/projects/<BEDEPROJECT>/$USER/miniconda',                                                         #<-----CHANGE ME                                                    
+                'export WANDB_CACHE_DIR=/nobackup/projects/<BEDEPROJECT>/$USER/',
                 'export NCCL_SOCKET_IFNAME=ib0'])
         comm="python3"
     else:
@@ -136,12 +137,14 @@ def SlurmRun(trialconfig):
                              '#SBATCH --mem=128G',
                              '#SBATCH --cpus-per-task=8',
                              'export CONDADIR=/storage/hpc/46/manders3/conda4/open-ce',                                                     #<-----CHANGE ME
-                             'export NCCL_SOCKET_IFNAME=enp0s31f6',])
+                             'export NCCL_SOCKET_IFNAME=enp0s31f6',
+                             'export WANDB_CACHE_DIR=$global_scratch', ])                                                 #<-----CHANGE ME])
     sub_commands.extend([ '#SBATCH --{}={}\n'.format(cmd, value) for  (cmd, value) in slurm_commands.items()])
     sub_commands.extend([
         'export SLURM_NNODES=$SLURM_JOB_NUM_NODES',
         'export wandb=9cf7e97e2460c18a89429deed624ec1cbfb537bc',
         'export WANDB_API_KEY=9cf7e97e2460c18a89429deed624ec1cbfb537bc',
+        'export WANDB_CACHE_DIR=/nobackup/projects/<BEDEPROJECT>/$USER/wandb_cache',                                                  #<-----CHANGE ME
         'export ISHEC=True',                                                                               #<-----CHANGE ME                                         
         'source /etc/profile',
         'module add opence',
