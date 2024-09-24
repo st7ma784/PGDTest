@@ -200,6 +200,7 @@ class myLightningModule(LightningModule):
             img_embed_norm = img_embed / img_embed.norm(dim=-1, keepdim=True)
 
             output = img_embed_norm @ scale_text_embed.t()
+            assert output.requires_grad
             loss = self.criterion(output, torch.arange(prompted_images.size(0), device=self.device))
             loss.backward()
             losses.append(loss)
@@ -211,8 +212,8 @@ class myLightningModule(LightningModule):
             d = clamp(d, self.lower_limit - x, self.upper_limit - x)
             delta.data[:, :, :, :] = d
             delta.grad.zero_()
-            #zero the text model grads and the text embed grads
-            scale_text_embed.grad.zero_()            
+            #zero the gradient of scale text embed 
+                        
         self.log("mean_attack_losses",sum(losses)/len(losses))
         self.log("max_attack_loss",max(losses))
         self.log("min_attack_loss",min(losses))
