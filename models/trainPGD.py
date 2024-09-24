@@ -188,6 +188,8 @@ class myLightningModule(LightningModule):
         delta=self.init_delta(X,epsilon)
         losses=[]
         self.model.eval()
+        scale_text_embed=self.model.encode_text(text_tokens)
+        scale_text_embed = scale_text_embed / scale_text_embed.norm(dim=-1, keepdim=True)
         for _ in range(attack_iters):
             # output = model(normalize(X ))
             #prompted_images = self.prompter(normalize(delta + X ))
@@ -196,9 +198,8 @@ class myLightningModule(LightningModule):
             prompted_images = torch.div(torch.sub(new_images, self.mu_img), self.std_img) #normalize(new_images) but preserves grad
             img_embed=self.model.encode_image(prompted_images)
             img_embed_norm = img_embed / img_embed.norm(dim=-1, keepdim=True)
-            scale_text_embed=self.model.encode_text(text_tokens)
-            scale_text_embed_norm = scale_text_embed / scale_text_embed.norm(dim=-1, keepdim=True)
-            output = img_embed_norm @ scale_text_embed_norm.t()
+
+            output = img_embed_norm @ scale_text_embed.t()
             loss = self.criterion(output, torch.arange(prompted_images.size(0), device=self.device))
             loss.backward()
             losses.append(loss)
@@ -210,6 +211,8 @@ class myLightningModule(LightningModule):
             d = clamp(d, self.lower_limit - x, self.upper_limit - x)
             delta.data[:, :, :, :] = d
             delta.grad.zero_()
+            #zero the text model grads and the text embed grads
+            scale_text_embed.grad.zero_()            
         self.log("mean_attack_losses",sum(losses)/len(losses))
         self.log("max_attack_loss",max(losses))
         self.log("min_attack_loss",min(losses))
