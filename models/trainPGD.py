@@ -489,19 +489,19 @@ class myLightningModule(LightningModule):
             BadLogits=torch.nan_to_num(torch.cat([val["logits"] for val in self.attackedresults[dataset_idx]],dim=0)).cpu().numpy()
             #check at least 2 classes are present in the dataset
             if len(np.unique(GoodLabels)) < 2 or len(np.unique(BadLabels)) < 2:
-                print("Not enough classes to run linear probes on dataset {dataset_idx}")
+                print("Not enough classes to run linear probes on dataset {}".format(dataset_idx))
                 #skip this dataset
                 continue
             self.Dirtyclassifier.fit(BadLogits, BadLabels)
             self.Cleanclassifier.fit(GoodLogits, GoodLabels)
-            self.log( "Clean Classifier on Dirty Features on dataset {dataset_idx}",self.Cleanclassifier.score(BadLogits, BadLabels))
-            self.log( "Dirty Classifier on Clean Features on dataset {dataset_idx}",self.Dirtyclassifier.score(GoodLogits, GoodLabels))
-            self.log( "Clean Classifier on Clean Features on dataset {dataset_idx}",self.Cleanclassifier.score(GoodLogits, GoodLabels))
-            self.log( "Dirty Classifier on Dirty Features on dataset {dataset_idx}",self.Dirtyclassifier.score(BadLogits, BadLabels))
+            self.log( "Clean Classifier on Dirty Features on dataset {}".format(dataset_idx),self.Cleanclassifier.score(BadLogits, BadLabels))
+            self.log( "Dirty Classifier on Clean Features on dataset {}".format(dataset_idx),self.Dirtyclassifier.score(GoodLogits, GoodLabels))
+            self.log( "Clean Classifier on Clean Features on dataset {}".format(dataset_idx),self.Cleanclassifier.score(GoodLogits, GoodLabels))
+            self.log( "Dirty Classifier on Dirty Features on dataset {}".format(dataset_idx),self.Dirtyclassifier.score(BadLogits, BadLabels))
             self.generalclassifier.fit(np.concatenate([GoodLogits,BadLogits]), np.concatenate([GoodLabels,BadLabels]))
-            self.log( "General Classifier on Dirty Features on dataset {dataset_idx}",self.generalclassifier.score(BadLogits, BadLabels))
-            self.log( "General Classifier on Clean Features on dataset {dataset_idx}",self.generalclassifier.score(GoodLogits, GoodLabels))
-            self.log( "General Classifier on All Features on dataset {dataset_idx}",self.generalclassifier.score(np.concatenate([GoodLogits,BadLogits]), np.concatenate([GoodLabels,BadLabels])))
+            self.log( "General Classifier on Dirty Features on dataset {}".format(dataset_idx),self.generalclassifier.score(BadLogits, BadLabels))
+            self.log( "General Classifier on Clean Features on dataset {}".format(dataset_idx),self.generalclassifier.score(GoodLogits, GoodLabels))
+            self.log( "General Classifier on All Features on dataset {}".format(dataset_idx),self.generalclassifier.score(np.concatenate([GoodLogits,BadLogits]), np.concatenate([GoodLabels,BadLabels])))
 
         #this should give us PLENTY of data to write about! 
         
