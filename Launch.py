@@ -41,7 +41,7 @@ def train(config={
         os.environ["PL_TORCH_DISTRIBUTED_BACKEND"]='gloo'
     trainer=pytorch_lightning.Trainer(
             devices="auto" if devices is None else devices,
-            accelerator="gpu",
+            accelerator="auto",
             max_epochs=200,
             #profiler="advanced",
             #plugins=[SLURMEnvironment()],
@@ -72,7 +72,7 @@ def train(config={
 #### This is a wrapper to make sure we log with Weights and Biases, You'll need your own user for this.
 def wandbtrain(config=None,dir=None,devices=None,accelerator=None,Dataset=None):
 
-    USER="PGNTeam" #<-----CHANGE ME
+    USER="PGNTeam" 
     PROJECT="AllDataPGN"
     NAME="TestDeploy"
     import pytorch_lightning
@@ -134,7 +134,7 @@ def SlurmRun(trialconfig):
 
         sub_commands.extend(['#SBATCH -p gpu-medium',
                              #add command to request more memory
-                             '#SBATCH --mem=128G',
+                             '#SBATCH --mem=96G',
                              '#SBATCH --cpus-per-task=8',
                              'export CONDADIR=/storage/hpc/46/manders3/conda4/open-ce',                                                     #<-----CHANGE ME
                              'export NCCL_SOCKET_IFNAME=enp0s31f6',
