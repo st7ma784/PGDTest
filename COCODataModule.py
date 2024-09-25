@@ -143,7 +143,7 @@ class CustomImageNetDataset(Dataset):
 import random
 
 def CustomCOCODatasetWithClasses(CocoCaptions):
-    def __init__(self, root, annFile, transform=None):
+    def __init__(self, root, annFile, transform=None,**kwargs):
         super(CocoCaptions, self).__init__(root, annFile, transform=transform)
         self.transform = transform
 
