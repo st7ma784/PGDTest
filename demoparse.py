@@ -86,7 +86,7 @@ class baseparser(HyperOptArgumentParser):
         self.opt_list("--momentum", default=0.9, type=float, tunable=False)
         self.opt_list("--train_eps", default=2, options=[1,2,3], type=float, tunable=True)
         self.opt_list("--train_numsteps", default=5, options=[2,5,10], type=int, tunable=True)
-        self.opt_list("--train_stepsize", default=1, type=int, tunable=False)
+        self.opt_list("--train_stepsize", default=1, type=int,options=[1,2,3], tunable=False)
         self.opt_list("--test_eps", default=1, type=float, tunable=False)
         self.opt_list("--test_numsteps", default=10, type=int, tunable=False)
         self.opt_list("--test_stepsize", default=1, type=int, tunable=False)
