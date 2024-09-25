@@ -101,8 +101,6 @@ class myLightningModule(LightningModule):
     
         self.mu_img = torch.tensor((0.485, 0.456, 0.406)).view(3,1,1).to(self.device)
         self.std_img = torch.tensor((0.229, 0.224, 0.225)).view(3,1,1).to(self.device)
-
-
         
     def init_uniform(self, X,eps):
         delta=  torch.zeros_like(X,device=self.device,).uniform_(-eps, eps)
@@ -193,6 +191,7 @@ class myLightningModule(LightningModule):
             delta.data[:, :, :, :] = d
             delta.grad.zero_()
         return X,text_tokens+delta
+    
     #insert function decorator to ensure this ALWAys has grad
     @torch.enable_grad()
     def attack_pgd(self,  X, target, text_tokens, alpha, attack_iters, restarts=1, early_stop=True, epsilon=0):
@@ -281,7 +280,6 @@ class myLightningModule(LightningModule):
             delta.grad.zero_()
         return X+delta, text_tokens
     
-
     @torch.enable_grad()
     def attack_CW_noprompt(self, X, target, text_tokens, alpha, attack_iters, restarts=1, early_stop=True, epsilon=0):
         delta=self.init_delta(X,epsilon)
@@ -326,6 +324,7 @@ class myLightningModule(LightningModule):
     def forward(self,input):
         #This inference steps of a foward pass of the model 
         return self.model(input)
+    
     def on_train_epoch_start(self):
         self.mu_img = torch.tensor((0.485, 0.456, 0.406)).view(3,1,1).to(self.device)
         self.std_img = torch.tensor((0.229, 0.224, 0.225)).view(3,1,1).to(self.device)
@@ -341,6 +340,7 @@ class myLightningModule(LightningModule):
             self.attack=self.no_attack
         else:
             raise ValueError 
+    
     def training_step(self, batch, batch_idx):
         #The batch is collated for you, so just seperate it here and calculate loss. 
         #By default, PTL handles optimization and scheduling and logging steps. so All you have to focus on is functionality. Here's an example...
@@ -411,7 +411,6 @@ class myLightningModule(LightningModule):
         # self.results.append({"imfeatures":self.model(cleanimages), "dirtyfeatures":self.model(attackedImages),"classes":batch[2],"originalmodel":self.orimodel(cleanimages),"dirtyoriginalmodel":self.orimodel(attackedImages)})
         return loss
    
-
     def on_train_epoch_end(self):
 
         l2_norm_obj = sum(p.norm(2) for p in self.model.visual.parameters())
@@ -442,6 +441,7 @@ class myLightningModule(LightningModule):
             self.testattack=self.no_attack
         else:
             raise ValueError 
+    
     def validation_step(self, batch, batch_idx,  dataloader_idx=0, *args, **kwargs):
         images, target,text = batch
         #a is the image, b is the target
@@ -509,6 +509,7 @@ class myLightningModule(LightningModule):
         
 
         return loss
+    
     def on_validation_epoch_end(self):
 
         #make linear probes here, and log the results.
