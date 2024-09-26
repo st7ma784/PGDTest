@@ -1,0 +1,271 @@
+<html>
+<head>
+    <title>Similarities</title>
+</head>
+<body>
+<!-- use css -->
+<style>
+    .orb {
+        width: 100px;
+        height: 100px;
+        background-color: red;
+        -moz-border-radius: 50px;
+        -webkit-border-radius: 50px;
+        border-radius: 50px;
+        /*bring to front  */
+        z-index: 1;
+        }
+    #S {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+    }
+
+    /* Tooltip container */
+    .tooltip {
+    position: relative;
+    display: inline-block;
+    border-bottom: 1px dotted black; /* If you want dots under the hoverable text */
+    }
+
+    /* Tooltip text */
+    .tooltip .tooltiptext {
+    visibility: hidden;
+    width: 240px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    padding: 5px 0;
+    border-radius: 6px;
+    
+    /* Position the tooltip text - see examples below! */
+    position: absolute;
+    z-index: 1;
+    }
+    /* buttons bigger */
+    .b {
+        font-size: 20px;
+        padding: 15px 32px;
+        text-align: center;
+        display: inline-block;
+        margin: 4px 2px;
+        cursor: pointer;
+        border-radius: 12px;
+    }
+    /* Show the tooltip text when you mouse over the tooltip container */
+    .tooltip:hover .tooltiptext {
+    visibility: visible;
+    }
+    /* Align controls to top right */
+    #Controls {
+        position: absolute;
+        top: 0;
+        right: 0;
+    }
+    /* set axis to middle of screen */
+    #xAxis {
+        position: absolute;
+        top: 50%;
+        left: 0%;
+        width: 100%;    
+        
+    }
+    #yAxis {
+        position: absolute;
+        top: 0%;
+        left: 50%;
+            border-left: 1px solid black;
+        height: 100%;
+    }
+    .stats {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        }
+</style>
+
+<script src="https://cdn.jsdelivr.net/gh/interactiveJS/interactiveJS@v2.0.1/src/individuals/draggable.min.js"></script>
+<script>
+    function getdata(){
+        var orbs = document.getElementsByClassName("orb");
+        var x = [];
+        var y = [];      
+        //check if orbs are left on the screen
+        if (orbs.length == 0) {
+            document.getElementById("S").innerHTML = "";
+            return;
+        }
+        for (var i = 0; i < orbs.length; i++) {
+            x.push(orbs[i].style.left);
+            y.push(orbs[i].style.top);
+        }
+        let isNorm = document.getElementById("norm").checked;
+        let isJSE = document.getElementById("JSE").checked;
+        let isStats = document.getElementById("verbose").checked;
+        return { 'x': x, 'y': y, "stats": isStats,"jse":isJSE, "norm":isNorm, "width":  window.innerWidth, "height": window.innerHeight};
+
+    }
+    function doUpdate(){
+        let dataJSON = JSON.stringify(getdata());
+        let request = new XMLHttpRequest();
+        request.onreadystatechange = function(){
+            if (request.readyState === 4) {
+                //the reply is a jsonified dict of key value points to print.
+                var points = JSON.parse(request.response);
+
+                // add stats to the html
+                //create list of strings from key:value pairs
+                var stats = [];
+                for (var key in points) {
+                    if (points.hasOwnProperty(key)) {
+                        stats.push(key + ": " + points[key]);
+                    }
+                }
+                // split this into new lines for the html
+                stats = stats.join("<br>");
+                document.getElementById("S").innerHTML=stats; 
+            }
+        };
+        const action = "POST";
+        // get endpoint from the server host environment
+        // const endpoint = "http://"+window.location.hostname+":5000/demo/data";
+
+
+        //const endpoint = "http://scc-lanfotech.lancs.ac.uk:80/demo/data";
+        const endpoint = "http://localhost:8000/demo/data";
+        //get endpoint from the server
+        // this may vary depending on the server
+        //const endpoint = "http://"+window.location.hostname+":5000/data";
+
+        request.open(action, endpoint);
+        request.setRequestHeader("Content-Type", "application/json");
+
+        request.send(dataJSON);
+        }
+    function getGraphs(){
+        let dataJSON = JSON.stringify(getdata());
+        let request = new XMLHttpRequest();
+        const action = "POST";
+        request.onreadystatechange = function(){
+            if (this.readyState == 4 && this.status == 200){
+                //the reply is a make_response(send_file(...))
+
+                // create a blob from the response
+                var blob = new Blob([this.response], {type: "application/zip"});
+                
+                var url = window.URL.createObjectURL(blob);
+                var link = document.createElement('a');
+                link.href = url;
+                link.click();
+
+                setTimeout(() => {
+                    window.URL.revokeObjectURL(url);
+                    link.remove(); } , 100);
+            }
+        };
+
+        
+        //const endpoint = "http://"+window.location.hostname+":5000/demo/Plotfour";
+        const endpoint = "http://localhost:8000/demo/data";
+
+        request.open(action, endpoint);
+        request.setRequestHeader("Content-Type", "application/json");
+        request.send(dataJSON);
+    };
+
+        
+    
+    function ADDORB() {
+        // Remove the last row from the table
+        var orb = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        node = document.getElementById('graph');
+        node.appendChild(orb);
+        // count the number of children in the graph
+        nodes = document.getElementById('graph').childNodes;
+        orb.setAttribute("class", "orb");
+        orb.setAttribute("id", "orb"+nodes.length);
+        var x = Math.floor(Math.random() *  window.innerWidth);
+        var y = Math.floor(Math.random() * window.innerHeight);
+        var [rx, ry] = convertxytorelxy(x,y);
+        node.insertAdjacentHTML('afterend', '<div id="orb'+nodes.length+'" style="left:'+x+'px;top:'+y+'px;position:absolute;" class="orb" draggable="true" ondragend="orblistener(event)"> x:' + rx + ' <br> y:' + ry+ '</d>');
+        node.appendChild(orb);
+        node.innerHTML = node.innerHTML;
+        doUpdate();
+
+    }
+    function convertxytorelxy(x,y) {
+        var relx = x- window.innerWidth/2;
+        var rely = y - window.innerHeight/2;
+        return [relx,rely];
+    }
+    function orblistener(event) {
+        var x = event.clientX;
+        var y = event.clientY;
+        var orb = event.target;
+        orb.style.left = x + 'px';
+        orb.style.top = y + 'px';
+        orb.style.position = 'absolute';
+        var [rx,ry] = convertxytorelxy(x,y);
+        orb.innerHTML = "x: " + rx + " <br> y: " +ry + "<br>";
+        doUpdate();
+        }
+    function REMOVEORB() {
+        
+        let nodes = document.getElementById('graph').childNodes;
+        let id = "orb"+nodes.length;
+        nodes[nodes.length-1].remove();
+        //check html for the id 
+        document.getElementById(id).remove();       
+        doUpdate();
+       
+    }
+
+    
+</script>
+<h1>Similarities Visualization</h1>
+<div id="Controls">
+
+<button type="button" class="b" id="add_orbs" onclick="ADDORB()">Add Orbs</button>
+<button type="button" class="b" id="remove_orbs" onclick="REMOVEORB()">Remove Orbs</button>
+<button type="button" class="b" id="Get 4D graphs" onclick="getGraphs()">Update</button>
+<div class="tooltip">How To use...
+    <span class="tooltiptext">This button takes the points on the screen as a batch of items. <br>
+        The graphs that download are plots of Batch x Batch x Batch x Batch.<br>
+        N.B these values are the same as if there are 4 points. <br>
+          
+      </span>
+  </div>
+<!-- checkbox for using normed or not... when changed do update -->
+<label for="norm">Use Normed functions</label>
+<input type="checkbox" id="norm" name="useNormed" onchange="doUpdate()">
+<label for="JSE">Use JSE</label>
+
+<input type="checkbox" id="JSE" name="AdvancedJSE" onchange="doUpdate()">
+
+<label for="verbose">show stats</label>
+<input type="checkbox" id="verbose" name="verbose" onchange="doUpdate()">
+</div>
+
+<div class="tooltip">How To use...
+  <span class="tooltiptext">This app shows the similarity between "orbs" on the screen. We trial 20 different Methods as described in Stephen Mander's Thesis. <br>
+    <br>1. Click "Add Orbs" to add orbs to the screen. <br>
+    <br>2. Click "Remove Orbs" to remove orbs from the screen. <br>
+    <br>3. Drag orbs around the screen to change their position. <br>
+    <br>4. The similarity between the orbs is shown in the box below. <br>
+
+    </span>
+</div>
+<div class="container" id="graph">
+<!-- create "axis" for the graph -->
+<!-- add horizontal line  -->
+<div id="yAxis"> </div>
+<hr id="xAxis">
+<!-- add vertical line -->
+</div> 
+<div id="stats">
+
+</div>
+
+
+<p id="S"></p>
+</html>

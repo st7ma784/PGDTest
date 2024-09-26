@@ -128,7 +128,7 @@ def SlurmRun(trialconfig):
 
     if str(os.getenv("HOSTNAME","localhost")).endswith("bede.dur.ac.uk"):
         sub_commands.extend([
-                '#SBATCH --account $USER',
+                '#SBATCH --account bdlan05',
                 'export CONDADIR=/nobackup/projects/bdlan05/$USER/miniconda',                                                         #<-----CHANGE ME                                                    
                 'export WANDB_CACHE_DIR=/nobackup/projects/bdlan05/$USER/',
                 'export NCCL_SOCKET_IFNAME=ib0'])
