@@ -6,15 +6,96 @@
 <!-- use css -->
 <style>
     .orb {
-        width: 100px;
-        height: 100px;
-        background-color: red;
-        -moz-border-radius: 50px;
-        -webkit-border-radius: 50px;
-        border-radius: 50px;
+        width: 8px;
+        height: 4px;
+        -moz-border-radius: 4px;
+        -webkit-border-radius: 4px;
+        border-radius: 4px;
         /*bring to front  */
         z-index: 1;
         }
+    .baseorb {
+        background-color: red;
+        width: 4px;
+        height: 8px;
+        -moz-border-radius: 4px;
+        -webkit-border-radius: 4px;
+        border-radius: 4px;
+        /*bring to front  */
+        z-index: 1;
+    }
+    /* IF id is 1 */
+    .orb[id="1"] {
+        background-color: blue;
+    }
+    /* IF id is 2 */
+    .orb[id="2"] {
+        background-color: green;
+    }
+    /* IF id is 3 */
+    .orb[id="3"] {
+        background-color: yellow;
+    }
+    /* IF id is 4 */
+    .orb[id="4"] {
+        background-color: purple;
+    }
+    /* IF id is 5 */
+    .orb[id="5"] {
+        background-color: orange;
+    }
+    /* IF id is 6 */
+    .orb[id="6"] {
+        background-color: pink;
+    }
+    /* IF id is 7 */
+    .orb[id="7"] {
+        background-color: brown;
+    }
+    /* IF id is 8 */
+    .orb[id="8"] {
+        background-color: grey;
+    }
+    /* IF id is 9 */
+    .orb[id="9"] {
+        background-color: cyan;
+    }
+    /* IF id is 10 */
+    .orb[id="10"] {
+        background-color: magenta;
+    }
+    /* repeat for baseorb */
+    .baseorb[id="1"] {
+        background-color: blue;
+    }
+    .baseorb[id="2"] {
+        background-color: green;
+    }
+    .baseorb[id="3"] {
+        background-color: yellow;
+    }
+    .baseorb[id="4"] {
+        background-color: purple;
+    }
+    .baseorb[id="5"] {
+        background-color: orange;
+    }
+    .baseorb[id="6"] {
+        background-color: pink;
+    }
+    .baseorb[id="7"] {
+        background-color: brown;
+    }
+
+    .baseorb[id="8"] {
+        background-color: grey;
+    }
+    .baseorb[id="9"] {
+        background-color: cyan;
+    }
+    .baseorb[id="10"] {
+        background-color: magenta;
+    }
     #S {
         position: absolute;
         bottom: 0;
@@ -87,9 +168,10 @@
 <script src="https://cdn.jsdelivr.net/gh/interactiveJS/interactiveJS@v2.0.1/src/individuals/draggable.min.js"></script>
 <script>
     function getdata(){
-        var orbs = document.getElementsByClassName("orb");
+        var orbs = document.getElementsByClassName("baseorb");
         var x = [];
         var y = [];      
+        var labels=[];
         //check if orbs are left on the screen
         if (orbs.length == 0) {
             document.getElementById("S").innerHTML = "";
@@ -98,12 +180,13 @@
         for (var i = 0; i < orbs.length; i++) {
             x.push(orbs[i].style.left);
             y.push(orbs[i].style.top);
+            labels.push(orbs[i].id);
         }
         let isNorm = document.getElementById("norm").checked;
-        let isJSE = document.getElementById("JSE").checked;
-        let isStats = document.getElementById("verbose").checked;
-        return { 'x': x, 'y': y, "stats": isStats,"jse":isJSE, "norm":isNorm, "width":  window.innerWidth, "height": window.innerHeight};
-
+        let alpha = document.getElementById("alpha").value;
+        let epsilon = document.getElementById("epsilon").value;
+        let iters = document.getElementById("iters").value;
+        return { 'x': x, 'y': y,'labels':labels, "norm":isNorm, "width":  window.innerWidth, "height": window.innerHeight, "alpha": alpha, "epsilon": epsilon, "iters": iters};
     }
     function doUpdate(){
         let dataJSON = JSON.stringify(getdata());
@@ -112,78 +195,146 @@
             if (request.readyState === 4) {
                 //the reply is a jsonified dict of key value points to print.
                 var points = JSON.parse(request.response);
-
-                // add stats to the html
-                //create list of strings from key:value pairs
-                var stats = [];
-                for (var key in points) {
-                    if (points.hasOwnProperty(key)) {
-                        stats.push(key + ": " + points[key]);
-                    }
+                // this is a list of the points to print, each point is a dict with x, y, label
+                // we'll draw each point on the screen as a plotted X shape. 
+                var node = document.getElementById('graph');
+                node.innerHTML = "";
+                for (var i = 0; i < points.length; i++) {
+                    var point = points[i];
+                    var orb = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                    orb.setAttribute("class", "orb");
+                    orb.setAttribute("id", point['label']);
+                    orb.setAttribute("cx", point['x']);
+                    orb.setAttribute("cy", point['y']);
+                    orb.setAttribute("r", 5);
+                    node.appendChild(orb);
+                    node.insertAdjacentHTML('afterend', '<div id="'+point['label']+'" style="left:'+point['x']+'px;top:'+point['y']+'px;position:absolute;" class="orb" draggable="false" ondragend="orblistener(event)"> x:' + point['rx'] + ' <br> y:' + point['ry']+ '</d>');
                 }
-                // split this into new lines for the html
-                stats = stats.join("<br>");
-                document.getElementById("S").innerHTML=stats; 
             }
         };
         const action = "POST";
         // get endpoint from the server host environment
-        // const endpoint = "http://"+window.location.hostname+":5000/demo/data";
-
-
+        const endpoint = "http://"+window.location.hostname+":5000/2d/data";
         //const endpoint = "http://scc-lanfotech.lancs.ac.uk:80/demo/data";
-        const endpoint = "http://localhost:8000/demo/data";
+        
         //get endpoint from the server
         // this may vary depending on the server
         //const endpoint = "http://"+window.location.hostname+":5000/data";
-
         request.open(action, endpoint);
         request.setRequestHeader("Content-Type", "application/json");
-
         request.send(dataJSON);
         }
-    function getGraphs(){
-        let dataJSON = JSON.stringify(getdata());
-        let request = new XMLHttpRequest();
-        const action = "POST";
-        request.onreadystatechange = function(){
-            if (this.readyState == 4 && this.status == 200){
-                //the reply is a make_response(send_file(...))
 
-                // create a blob from the response
-                var blob = new Blob([this.response], {type: "application/zip"});
-                
-                var url = window.URL.createObjectURL(blob);
-                var link = document.createElement('a');
-                link.href = url;
-                link.click();
-
-                setTimeout(() => {
-                    window.URL.revokeObjectURL(url);
-                    link.remove(); } , 100);
-            }
-        };
+    function ADDclass(){
+        // this function adds 2 buttons to the screen, one to add an orb and one to remove an orb from class
+        var node = document.getElementById('Controls');
+        //the button will have a number on it, which will label any orbs added to the screen as being in that class
+        var classnum = node.childNodes.length;
+        var button = document.createElement("button");
+        button.setAttribute("type", "button");
+        button.setAttribute("class", "b");
+        button.setAttribute("id", "addorb"+classnum);
+        button.setAttribute("onclick", "ADDORB('"+classnum+"')");
+        button.innerHTML = "Add Orb to Class "+classnum;    
+        node.appendChild(button);
+        var button = document.createElement("button");
+        button.setAttribute("type", "button");
+        button.setAttribute("class", "b");
+        button.setAttribute("id", "removeorb"+classnum);
+        button.setAttribute("onclick", "REMOVEORB('"+classnum+"')");
+        button.innerHTML = "Remove Orb from Class "+classnum;
+        node.appendChild(button);
+    }
 
         
-        //const endpoint = "http://"+window.location.hostname+":5000/demo/Plotfour";
-        const endpoint = "http://localhost:8000/demo/data";
-
+    function ReLabelPoints() {
+        // this function will relabel all the orbs on the screen with the class number
+        var nodes = document.getElementById('graph').childNodes;
+        var x=[];
+        var y=[];
+        var labels=[];
+        var orbs=[];
+        let method= document.getElementById("relabelmethod").value;
+        for (var i = 0; i < nodes.length; i++) {
+            if (nodes[i].className == "baseorb") {
+                // append x, y and label to the list
+                orbs.push(i);
+                x.push(nodes[i].style.left);
+                y.push(nodes[i].style.top);
+                labels.push(nodes[i].id);
+            }
+        }
+        let data = {'x': x, 'y': y, 'labels': labels, 'method': method};
+        let dataJSON = JSON.stringify(data);
+        let request = new XMLHttpRequest();
+        request.onreadystatechange = function(){
+            if (request.readyState === 4) {
+                //the reply is a jsonified dict of key value points to print.
+                var points = JSON.parse(request.response);
+                // this is a list of the points to print, each point is a dict with x, y, label
+                // we'll draw each point on the screen as a plotted X shape. 
+                for (var i = 0; i < points.length; i++) {
+                    orb=nodes[orbs[i]];
+                    orb.setAttribute("id", point['label']);
+                }
+            }
+        };
+        const action = "POST";
+        // get endpoint from the server host environment /2d/classifyPoints
+        const endpoint = "http://"+window.location.hostname+":5000/2d/classifyPoints";
         request.open(action, endpoint);
         request.setRequestHeader("Content-Type", "application/json");
         request.send(dataJSON);
-    };
 
-        
+    }
+    function ReLabelPredictedPoints(){
+        var nodes = document.getElementById('graph').childNodes;
+        var x=[];
+        var y=[];
+        var labels=[];
+        var orbs=[];
+        let method= document.getElementById("relabelmethod").value;
+        for (var i = 0; i < nodes.length; i++) {
+            if (nodes[i].className == "orb") {
+                // append x, y and label to the list
+                orbs.push(i);
+                x.push(nodes[i].style.left);
+                y.push(nodes[i].style.top);
+                labels.push(nodes[i].id);
+            }
+        }
+        let data = {'x': x, 'y': y, 'labels': labels, 'method': method};
+        let dataJSON = JSON.stringify(data);
+        let request = new XMLHttpRequest();
+        request.onreadystatechange = function(){
+            if (request.readyState === 4) {
+                //the reply is a jsonified dict of key value points to print.
+                var points = JSON.parse(request.response);
+                // this is a list of the points to print, each point is a dict with x, y, label
+                // we'll draw each point on the screen as a plotted X shape. 
+                for (var i = 0; i < points.length; i++) {
+                    orb=nodes[orbs[i]];
+                    orb.setAttribute("id", point['label']);
+                }
+            }
+        };
+        const action = "POST";
+        // get endpoint from the server host environment /2d/classifyPoints
+        const endpoint = "http://"+window.location.hostname+":5000/2d/classifyPoints";
+        request.open(action, endpoint);
+        request.setRequestHeader("Content-Type", "application/json");
+        request.send(dataJSON);
+    }
     
-    function ADDORB() {
+    function ADDORB(id){
         // Remove the last row from the table
         var orb = document.createElementNS("http://www.w3.org/2000/svg", "circle");
         node = document.getElementById('graph');
         node.appendChild(orb);
         // count the number of children in the graph
         nodes = document.getElementById('graph').childNodes;
-        orb.setAttribute("class", "orb");
-        orb.setAttribute("id", "orb"+nodes.length);
+        orb.setAttribute("class", "baseorb");
+        orb.setAttribute("id", id);
         var x = Math.floor(Math.random() *  window.innerWidth);
         var y = Math.floor(Math.random() * window.innerHeight);
         var [rx, ry] = convertxytorelxy(x,y);
@@ -191,7 +342,6 @@
         node.appendChild(orb);
         node.innerHTML = node.innerHTML;
         doUpdate();
-
     }
     function convertxytorelxy(x,y) {
         var relx = x- window.innerWidth/2;
@@ -209,52 +359,56 @@
         orb.innerHTML = "x: " + rx + " <br> y: " +ry + "<br>";
         doUpdate();
         }
-    function REMOVEORB() {
+    function REMOVEORB(id) {
         
         let nodes = document.getElementById('graph').childNodes;
-        let id = "orb"+nodes.length;
-        nodes[nodes.length-1].remove();
-        //check html for the id 
-        document.getElementById(id).remove();       
+        // find the first orb with the id
+        for (var i = 0; i < nodes.length; i++) {
+            if (nodes[i].id == id) {
+                nodes[i].remove();
+                break;
+            }
+        }      
         doUpdate();
-       
     }
 
     
 </script>
-<h1>Similarities Visualization</h1>
+<h1>PGD Visualisation</h1>
 <div id="Controls">
 
-<button type="button" class="b" id="add_orbs" onclick="ADDORB()">Add Orbs</button>
-<button type="button" class="b" id="remove_orbs" onclick="REMOVEORB()">Remove Orbs</button>
-<button type="button" class="b" id="Get 4D graphs" onclick="getGraphs()">Update</button>
-<div class="tooltip">How To use...
-    <span class="tooltiptext">This button takes the points on the screen as a batch of items. <br>
-        The graphs that download are plots of Batch x Batch x Batch x Batch.<br>
-        N.B these values are the same as if there are 4 points. <br>
-          
-      </span>
-  </div>
+<button type="button" class="b" id="add_classes" onclick="ADDclass()">Add Classes</button>
+
 <!-- checkbox for using normed or not... when changed do update -->
 <label for="norm">Use Normed functions</label>
 <input type="checkbox" id="norm" name="useNormed" onchange="doUpdate()">
-<label for="JSE">Use JSE</label>
 
-<input type="checkbox" id="JSE" name="AdvancedJSE" onchange="doUpdate()">
+<!-- add input sliders for alpha, epsilon and iters values -->
+<label for="alpha">Alpha:</label>
+<input type="range" id="alpha" name="alpha" min="0" max="2" step="0.01" value="0.1" onchange="doUpdate()">
+<label for="epsilon">Epsilon:</label>
+<input type="range" id="epsilon" name="epsilon" min="0" max="2" step="0.01" value="0.01" onchange="doUpdate()">
+<label for="iters">Iterations:</label>
+<input type="range" id="iters" name="iters" min="0" max="100" step="1" value="10" onchange="doUpdate()">
 
-<label for="verbose">show stats</label>
-<input type="checkbox" id="verbose" name="verbose" onchange="doUpdate()">
+<!-- add some other controls -->
+ <!-- a button to relabel user points -->
+<label for="relabelbase">Relabel User Points</label>
+<button type="button" class="b" id="relabelbase" onclick="ReLabelPoints()">Relabel</button>
+<label for="relabelpred">Relabel Predicted Points</label>
+<button type="button" class="b" id="relabelpred" onclick="ReLabelPredictedPoints()">Relabel</button>
+<label for="relabelmethodDropdown">Method Selection</label>
+<!-- dropdown menu -->
+<dropdown id="relabelmethodDropdown">
+    <select id="relabelmethod" name="relabelmethod">
+        <option value="kmeans">KMeans</option>
+        <option value="linearFitandPredict">Linear</option>
+    </select>
+
 </div>
 
-<div class="tooltip">How To use...
-  <span class="tooltiptext">This app shows the similarity between "orbs" on the screen. We trial 20 different Methods as described in Stephen Mander's Thesis. <br>
-    <br>1. Click "Add Orbs" to add orbs to the screen. <br>
-    <br>2. Click "Remove Orbs" to remove orbs from the screen. <br>
-    <br>3. Drag orbs around the screen to change their position. <br>
-    <br>4. The similarity between the orbs is shown in the box below. <br>
 
-    </span>
-</div>
+
 <div class="container" id="graph">
 <!-- create "axis" for the graph -->
 <!-- add horizontal line  -->
