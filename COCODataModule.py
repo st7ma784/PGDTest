@@ -144,7 +144,7 @@ import random
 
 def CustomCOCODatasetWithClasses(CocoCaptions):
     def __init__(self, root, annFile, transform,**kwargs):
-        super(CocoCaptions, self).__init__(root, annFile, transform=transform)
+        super().__init__(root, annFile, transform=transform)
         self.transform = transform
 
     def lookup_classes(self, idx):

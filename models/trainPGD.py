@@ -54,7 +54,7 @@ class myLightningModule(LightningModule):
         add_prompt_len = 0 if args.get("add_prompt","none") == 'none' else 1
         self.upper_limit, self.lower_limit = 1, 0
         self.model, _ = clip.load('ViT-B/32', device=self.device, jit=False,download_root=self.args.get("imagenet_root","./data"))
-        self.model_ori, _ = clip.load('ViT-B/32', device=self.device, jit=False,download_root=self.args.get("imagenet_root","./data"))
+        self.model_ori, _ = self.model.clone()
         self.model_text, _= None, None
         self.prompter = NullPrompter()
         self.add_prompter = TokenPrompter(add_prompt_len)
