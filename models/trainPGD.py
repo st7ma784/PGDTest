@@ -86,10 +86,13 @@ class myLightningModule(LightningModule):
             self.init_delta=self.init_uniform
             self.clamp=self.clamp_inf
             self.init_batch_delta=self.init_batch_uniform
+            self.clamp_batch=self.clamp_batch_inf
         elif  args.get("norm",'l_inf')=='l_2':
             self.init_delta=self.init_normal
             self.init_batch_delta=self.init_batch_normal
             self.clamp=self.clamp_2
+            self.clamp_batch=self.clamp_batch_2
+
         else:
             raise ValueError
        
