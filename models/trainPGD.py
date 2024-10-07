@@ -673,7 +673,7 @@ class myLightningModule(LightningModule):
         # alphas = np.array([1/255, 2/255, 4/255])
         # epsilons = np.array([1/255, 2/255, 4/255])
         # test_numsteps = np.array([5, 10])
-
+        text=text.squeeze(1)
         img_embed=self.model.encode_image(images)
         scale_text_embed=self.model.encode_text(text)
         img_embed_norm = img_embed / img_embed.norm(dim=-1, keepdim=True)
