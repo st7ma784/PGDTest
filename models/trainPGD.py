@@ -623,13 +623,13 @@ class myLightningModule(LightningModule):
             return delta
     
     def clamp_batch_inf(self,d,alpha,g,eps):
-        return torch.clamp(d + alpha.view(-1,1,1,1,1,1) * torch.sign(g), min=-eps
-                           , max=eps)
+        return torch.cat([torch.clamp(d + alpha.view(-1,1,1,1,1,1) * torch.sign(g), min=-e
+                           , max=e) for e in eps],dim=1)
     
     def clamp_batch_2(self,d,alpha,g,eps):
         g_norm = torch.norm(g.view(g.shape[0], -1), dim=1).view(-1, 1, 1, 1)
         scaled_g = g / (g_norm + 1e-10)
-        d = (d + scaled_g * alpha).view(d.size(0), -1).renorm(p=2, dim=0, maxnorm=eps).view_as(d)
+        d = (d + scaled_g * alpha.view(-1,1,1,1,1,1)).view(d.size(0), -1).renorm(p=2, dim=0, maxnorm=eps).view_as(d)
         return d
     
   
