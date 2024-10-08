@@ -574,8 +574,8 @@ class myLightningModule(LightningModule):
                   "weight_decay":self.args.get("weight_decay",0.0001)})
         elif self.args.get("optimizer","sgd") == "sgd":
             optimizer_fn=torch.optim.SGD
-            args.update({"momentum":self.args.get("momentum",0.9),
-                  "weight_decay":self.args.get("weight_decay",0.0001)})
+            # args.update({"momentum":self.args.get("momentum",0.9),
+            #       "weight_decay":self.args.get("weight_decay",0.0001)})
 
         elif self.args.get("optimizer","sgd") == "adam":
             optimizer_fn=torch.optim.Adam
