@@ -214,64 +214,63 @@ class MyDataModule(pl.LightningDataModule):
         if stage == 'fit' or stage is None:
             self.train_dataset_dict={}
             self.train_text_names_dict={}
-            
-            if 'coco' in self.train_dataset_names:
-                #download the coco dataset
-                from torchvision.datasets import CocoCaptions
-                from torchvision.transforms import transforms
-                from PIL import Image
-                import zipfile
-                from torch.utils.data import Dataset, DataLoader
-                if not os.path.exists(self.cache_dir):
-                    os.makedirs(self.cache_dir,exist_ok=True)
-                if not os.path.exists(os.path.join(self.cache_dir,"annotations")):
-                    URLS=["http://images.cocodataset.org/zips/train2017.zip","http://images.cocodataset.org/annotations/annotations_trainval2017.zip"]
-                    
-                    for url in URLS:
-                        print("Downloading",url)
-                        obj=SmartDL(url,os.path.join(self.cache_dir,str(url).split('/')[-1]),progress_bar=False)
-                        obj.FileName=str(url).split('/')[-1]
-                        if not os.path.exists(obj.get_dest()):
-                            obj.start(blocking=False)
-                            print("obj Path ",obj.get_dest())
-                        while not obj.isFinished():
-                            #print("Speed: %s" % obj.get_speed(human=True))
-                            print("Eta: %s" % obj.get_eta(human=True))
-                            time.sleep(5)
-                        if obj.isSuccessful():
-                            print("Downloaded: %s" % obj.get_dest())
-                        path = obj.get_dest()
-                        if obj.FileName.startswith("annotations"):
-                            print("Extracting annotations")
-                            print("path:",path)
+        
+            #download the coco dataset
+            from torchvision.datasets import CocoCaptions
+            from torchvision.transforms import transforms
+            from PIL import Image
+            import zipfile
+            from torch.utils.data import Dataset, DataLoader
+            if not os.path.exists(self.cache_dir):
+                os.makedirs(self.cache_dir,exist_ok=True)
+            if not os.path.exists(os.path.join(self.cache_dir,"annotations")):
+                URLS=["http://images.cocodataset.org/zips/train2017.zip","http://images.cocodataset.org/annotations/annotations_trainval2017.zip"]
+                
+                for url in URLS:
+                    print("Downloading",url)
+                    obj=SmartDL(url,os.path.join(self.cache_dir,str(url).split('/')[-1]),progress_bar=False)
+                    obj.FileName=str(url).split('/')[-1]
+                    if not os.path.exists(obj.get_dest()):
+                        obj.start(blocking=False)
+                        print("obj Path ",obj.get_dest())
+                    while not obj.isFinished():
+                        #print("Speed: %s" % obj.get_speed(human=True))
+                        print("Eta: %s" % obj.get_eta(human=True))
+                        time.sleep(5)
+                    if obj.isSuccessful():
+                        print("Downloaded: %s" % obj.get_dest())
+                    path = obj.get_dest()
+                    if obj.FileName.startswith("annotations"):
+                        print("Extracting annotations")
+                        print("path:",path)
 
+                        with zipfile.ZipFile(path, 'r') as zip_ref:
+                            try:
+                                zip_ref.extractall(self.cache_dir)
+                            except:
+                                print("Error extracting annotations")
+                                print("path:",path)
+                                print("ann_dir:",self.ann_dir)
+                    else:
+                        print("Extracting images")
+                        print("path:",path)
+                        if obj.FileName.endswith(".zip"):
+                            print("Extracting zip")
                             with zipfile.ZipFile(path, 'r') as zip_ref:
                                 try:
                                     zip_ref.extractall(self.cache_dir)
                                 except:
-                                    print("Error extracting annotations")
+                                    print("Error extracting images")
                                     print("path:",path)
-                                    print("ann_dir:",self.ann_dir)
-                        else:
-                            print("Extracting images")
-                            print("path:",path)
-                            if obj.FileName.endswith(".zip"):
-                                print("Extracting zip")
-                                with zipfile.ZipFile(path, 'r') as zip_ref:
-                                    try:
-                                        zip_ref.extractall(self.cache_dir)
-                                    except:
-                                        print("Error extracting images")
-                                        print("path:",path)
-                                        print("data_dir:",self.data_dir)
-                            print("Extracted: %s" % path)
-                #now load the dataset
-                annFile=os.path.join(self.cache_dir,"annotations","captions_train2017.json")
-                root=os.path.join(self.cache_dir,"train2017")
-                self.train_dataset_dict.update({"coco":CustomCOCODatasetWithClasses(root,annFile,self.preprocess)})
-                self.train_dataset = CustomCOCODatasetWithClasses(root,annFile,self.preprocess)
+                                    print("data_dir:",self.data_dir)
+                        print("Extracted: %s" % path)
+            #now load the dataset
+            annFile=os.path.join(self.cache_dir,"annotations","captions_train2017.json")
+            root=os.path.join(self.cache_dir,"train2017")
+            self.train_dataset_dict.update({"coco":CustomCOCODatasetWithClasses(root,annFile,self.preprocess)})
+            self.train_dataset = CustomCOCODatasetWithClasses(root,annFile,self.preprocess)
 
-                self.train_text_names_dict.update({"coco":get_text_prompts_train(self, self.train_dataset_dict["coco"])})
+            self.train_text_names_dict.update({"coco":get_text_prompts_train(self, self.train_dataset_dict["coco"])})
                 # self.train_datasets = [CustomtorchVisionDataset2(dataset, class_names) for dataset, class_names in [(self.train_dataset_dict[k], self.train_text_names_dict[k]) for k in self.train_dataset_dict.keys()]]
             # self.val_datasets = self.load_val_datasets()
             ##################validation datasets##################
@@ -283,10 +282,10 @@ class MyDataModule(pl.LightningDataModule):
                 val_dataset_dict.update({'cifar100': CIFAR100(root=self.imagenet_root, transform=self.preprocess, download=download, train=False)})
             if 'Caltech101'in self.val_dataset_names:
                 val_dataset_dict.update({'Caltech101': Caltech101(root=self.imagenet_root, target_type='category', transform=self.preprocess, download=download)})
-            if 'PCAM' in self.val_dataset_names:
-                val_dataset_dict.update({'PCAM': PCAM(root=self.imagenet_root, split='test', transform=self.preprocess, download=download)})
-                    # val_dataset_list.append(PCAM(root=self.imagenet_root, split='test', transform=preprocess224,
-                    #                                 download=True))
+            # if 'PCAM' in self.val_dataset_names:
+            #     val_dataset_dict.update({'PCAM': PCAM(root=self.imagenet_root, split='test', transform=self.preprocess, download=download)})
+            #         # val_dataset_list.append(PCAM(root=self.imagenet_root, split='test', transform=preprocess224,
+            #         #                                 download=True))
             if 'STL10' in self.val_dataset_names:
                 val_dataset_dict.update({'STL10': STL10(root=self.imagenet_root, split='test', transform=self.preprocess, download=download)})
                    
@@ -313,10 +312,10 @@ class MyDataModule(pl.LightningDataModule):
             #     val_dataset_dict.update({'Caltech256': Caltech256(root=self.imagenet_root, transform=self.preprocess, download=True)})
             #         # val_dataset_list.append(Caltech256(root=self.imagenet_root, transform=preprocess224,
                                                         # download=True))
-            if 'flowers102' in self.val_dataset_names:
-                val_dataset_dict.update({'flowers102': Flowers102(root=self.imagenet_root, split='test', transform=self.preprocess, download=download)})
-                    # val_dataset_list.append(Flowers102(root=self.imagenet_root, split='test',
-                                                        # transform=preprocess224, download=True))
+            # if 'flowers102' in self.val_dataset_names:
+            #     val_dataset_dict.update({'flowers102': Flowers102(root=self.imagenet_root, split='test', transform=self.preprocess, download=download)})
+            #         # val_dataset_list.append(Flowers102(root=self.imagenet_root, split='test',
+            #                                             # transform=preprocess224, download=True))
             if 'Country211' in self.val_dataset_names:
                 val_dataset_dict.update({'Country211': Country211(root=self.imagenet_root, split='test', transform=self.preprocess, download=download)})
                     # val_dataset_list.append(Country211(root=self.imagenet_root, split='test',
@@ -333,12 +332,89 @@ class MyDataModule(pl.LightningDataModule):
                 val_dataset_dict.update({'hateful_memes': HatefulMemes(root=self.imagenet_root, splits=['test_seen', 'test_unseen'],
                                                             transform=self.preprocess,download=download)})
             if 'ImageNet' in self.val_dataset_names:
-                    val_dataset_list.append(ImageFolder(os.path.join(self.imagenet_root, 'val'), transform=preprocess224))
+                    #download imagenet
+                    #get imagenet files and download them
+                    if not os.path.exists(os.path.join(self.imagenet_root,"ImageNet")):
+                        URLS=['http://www.image-net.org/challenges/LSVRC/2012/nnoupb/ILSVRC2012_img_train.tar',
+                        'http://www.image-net.org/challenges/LSVRC/2012/nnoupb/ILSVRC2012_img_val.tar',
+                        'http://www.image-net.org/challenges/LSVRC/2012/nnoupb/ILSVRC2012_img_test.tar',
+                        'http://www.image-net.org/challenges/LSVRC/2012/nnoupb/ILSVRC2012_devkit_t12.tar.gz']
+                        for url in URLS:
+                            print("Downloading",url)
+                            #use pysmartdl to download the files
+                            from pySmartDL import SmartDL
+                            obj=SmartDL(url,os.path.join(self.imagenet_root,url.split('/')[-1]),progress_bar=False)
+                            obj.start()
+                            if obj.isSuccessful():
+                                print("Downloaded: %s" % obj.get_dest())
+                            else:
+                                print("There were errors")
+                                print(obj.get_errors())
+                            #extract the files
+                            if url.endswith(".tar"):
+                                import tarfile
+                                with tarfile.open(obj.get_dest(), 'r') as tar_ref:
+                                    tar_ref.extractall(self.imagenet_root)
+                            elif url.endswith(".tar.gz"):
+                                import tarfile
+                                with tarfile.open(obj.get_dest(), 'r:gz') as tar_ref:
+                                    tar_ref.extractall(self.imagenet_root)
+                            else:
+                                print("Unknown file type")
+                            #load the dataset
+                        val_dataset_dict.update({'ImageNet': ImageFolder(os.path.join(self.imagenet_root, 'val'), transform=preprocess224)})
+                        # val_dataset_list.append(ImageFolder(os.path.join(self.imagenet_root, 'val'), transform=preprocess224))
             if 'tinyImageNet' in self.val_dataset_names:
-                    val_dataset_list.append(ImageFolder(
-                        os.path.join(self.tinyimagenet_root, 'val'),
-                        transform=preprocess224))
-                
+                    #download tinyimagenet
+                    #get tinyimagenet files and download them
+                    if not os.path.exists(os.path.join(self.tinyimagenet_root,"tiny-imagenet-200")):
+                        URLS=['http://cs231n.stanford.edu/tiny-imagenet-200.zip']
+                        for url in URLS:
+                            print("Downloading",url)
+                            #use pysmartdl to download the files
+                            from pySmartDL import SmartDL
+                            obj=SmartDL(url,os.path.join(self.tinyimagenet_root,url.split('/')[-1]),progress_bar=False)
+                            obj.start()
+                            if obj.isSuccessful():
+                                print("Downloaded: %s" % obj.get_dest())
+                            else:
+                                print("There were errors")
+                                print(obj.get_errors())
+                            #extract the files
+                            if url.endswith(".zip"):
+                                import zipfile
+                                with zipfile.ZipFile(obj.get_dest(), 'r') as zip_ref:
+                                    zip_ref.extractall(self.tinyimagenet_root)
+                            else:
+                                print("Unknown file type")
+                            #load the dataset
+                        #step one: open the val folder at tiny-imagenet-200/val, which is a list of file names and their classes in a text file
+                        #step two: make a list of files, and their classes
+                        #step three, make a set of folders with the class names, and move the files to the folders
+                        #step four: load the dataset
+                    if os.path.exists(os.path.join(self.tinyimagenet_root,"tiny-imagenet-200","val",'images')):
+                        #step one
+                        with open(os.path.join(self.tinyimagenet_root,"tiny-imagenet-200","val","val_annotations.txt"),'r') as f:
+                            lines=f.readlines()
+                            #step two
+                            val_files=[line.split()[0] for line in lines]
+                            val_classes=[line.split()[1] for line in lines]
+                        #step three
+                        for val_file, val_class in zip(val_files,val_classes):
+                            if not os.path.exists(os.path.join(self.tinyimagenet_root,"tiny-imagenet-200","val",val_class)):
+                                os.makedirs(os.path.join(self.tinyimagenet_root,"tiny-imagenet-200","val",val_class),exist_ok=True)
+                            shutil.move(os.path.join(self.tinyimagenet_root,"tiny-imagenet-200","val",'images',val_file),os.path.join(self.tinyimagenet_root,"tiny-imagenet-200","val",val_class))
+
+                        #step four - remove the images folder
+                        shutil.rmtree(os.path.join(self.tinyimagenet_root,"tiny-imagenet-200","val",'images'))
+                        
+                    val_dataset_dict.update({'tinyImageNet': ImageFolder(os.path.join(self.tinyimagenet_root,'tiny-imagenet-200', 'val'), transform=preprocess224)})
+
+
+                    # val_dataset_list.append(ImageFolder(
+                    #     os.path.join(self.tinyimagenet_root, 'val'),
+                    #     transform=preprocess224))
+            
             #concat datasets...
                         
 
@@ -350,7 +426,6 @@ class MyDataModule(pl.LightningDataModule):
 
                     class_names = each.classes
                     if name == 'ImageNet' or name == 'tinyImageNet':
-                        from utils import load_imagenet_folder2name
                         folder2name = load_imagenet_folder2name('imagenet_classes_names.txt')
                         new_class_names = []
                         for class_name in class_names:
@@ -359,8 +434,8 @@ class MyDataModule(pl.LightningDataModule):
                             new_class_names.append(folder2name.get("class_name", class_name))
                         class_names = new_class_names
 
-                    class_names = refine_classname(class_names)
-                    texts_tmp = [self.template.format(label) for label in class_names]
+                    texts_tmp = self.refine_classname(class_names)
+                   
                 else:
                      #print the names of the datasets that don't have classes
                     print(f"Dataset {name} does not have classes")
@@ -372,17 +447,24 @@ class MyDataModule(pl.LightningDataModule):
             print("Names for each dataset")
             print(["{}, {}".format(idx,each) for idx,each in enumerate(val_dataset_dict.keys())])
             self.val_texts = texts_list
-            self.val_datasets= [CustomtorchVisionDataset2(dataset, texts) for dataset, texts in zip(self.val_datasets, self.val_texts)]
+            self.val_datasets= [CustomtorchVisionDataset2(dataset, texts,self.default) for dataset, texts in zip(self.val_datasets, self.val_texts)]
+
+            #take a 90:10 split of the validation datasets
+            splits=[torch.utils.data.random_split(v,[int(0.95*len(v)),len(v)-int(0.95*len(v))]) for v in self.val_datasets]
+            self.test_datasets, self.val_datasets= zip(*splits)
 
 
     def train_dataloader(self):
-        return DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True, num_workers=16 ,pin_memory=True,prefetch_factor=4,drop_last=True)
+        return DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True, num_workers=4 if not self.ISHEC else 4 ,pin_memory=not self.ISHEC,prefetch_factor=4 if not self.ISHEC else 2,drop_last=True)
 
     def val_dataloader(self):
-        return [DataLoader(dataset, batch_size=self.batch_size, shuffle=False, num_workers=16, pin_memory=True,prefetch_factor=4,drop_last=True) for dataset in self.val_datasets]
+        return [DataLoader(dataset, batch_size=self.batch_size, shuffle=True, num_workers=4 if not self.ISHEC else 4, pin_memory=not self.ISHEC,prefetch_factor=4 if not self.ISHEC else 2,drop_last=True) for dataset in self.val_datasets]
 
     def test_dataloader(self):
-        return [DataLoader(dataset, batch_size=self.batch_size, shuffle=False, num_workers=16, pin_memory=True,prefetch_factor=4,drop_last=True) for dataset in self.val_datasets]
+        return [DataLoader(dataset, batch_size=self.batch_size, shuffle=False, num_workers=4 if not self.ISHEC else 4, pin_memory=not self.ISHEC,prefetch_factor=4 if not self.ISHEC else 2,drop_last=True) for dataset in self.test_datasets]
+
+
+
 
 
 
