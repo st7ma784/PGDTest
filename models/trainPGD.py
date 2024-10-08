@@ -461,8 +461,8 @@ class myLightningModule(LightningModule):
         #print(text.shape)
         prompt_token = None
         text=text.squeeze(1)      
-        if target is None:
-            print("No target in dataloader {}".format(dataloader_idx))
+        # if target is None:
+        #     print("No target in dataloader {}".format(dataloader_idx))
         
         img_embed=self.model.encode_image(images)
         scale_text_embed=self.model.encode_text(text)
@@ -536,6 +536,9 @@ class myLightningModule(LightningModule):
             self.generalclassifier = LogisticRegression(random_state=0, C=0.316, max_iter=100, verbose=0, n_jobs=-1)
             #we've selected 100 based on where it plateaus in the first few runs. 
         for dataset_idx in range(self.data_loader_count):
+            if len(self.cleanresults[dataset_idx]) == 0 or len(self.attackedresults[dataset_idx]) == 0:
+                print("No results for dataset {}".format(dataset_idx))
+                continue
             GoodLabels=torch.cat([val["textlabels"] for val in self.cleanresults[dataset_idx]],dim=0).cpu().numpy()
             GoodLogits=torch.nan_to_num(torch.cat([val["logits"] for val in self.cleanresults[dataset_idx]],dim=0)).cpu().numpy()
             BadLabels=torch.cat([val["textlabels"] for val in self.attackedresults[dataset_idx]],dim=0).cpu().numpy()
