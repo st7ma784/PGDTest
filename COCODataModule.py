@@ -156,7 +156,7 @@ def CustomCOCODatasetWithClasses(CocoCaptions):
         classes=self.lookup_classes(idx)      
         captions=random.choice(target)
         captions=clip.tokenize(captions)
-        
+        print("classes")
 
 
         if self.transform:
