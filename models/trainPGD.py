@@ -69,6 +69,7 @@ class myLightningModule(LightningModule):
         '''
 
         self.criterion = torch.nn.CrossEntropyLoss(reduction="mean")
+        self.test_criterion = torch.nn.CrossEntropyLoss(reduction="none")
         self.criterion_kl = nn.KLDivLoss(reduction="sum")
 
 
@@ -86,12 +87,12 @@ class myLightningModule(LightningModule):
             self.init_delta=self.init_uniform
             self.clamp=self.clamp_inf
             self.init_batch_delta=self.init_batch_uniform
-            self.clamp_batch=self.clamp_batch_inf
+            self.batch_clamp=self.clamp_batch_inf
         elif  args.get("norm",'l_inf')=='l_2':
             self.init_delta=self.init_normal
             self.init_batch_delta=self.init_batch_normal
             self.clamp=self.clamp_2
-            self.clamp_batch=self.clamp_batch_2
+            self.batch_clamp=self.clamp_batch_2
 
         else:
             raise ValueError
@@ -621,37 +622,62 @@ class myLightningModule(LightningModule):
             delta = clamp(delta, self.lower_limit - X, self.upper_limit - X)
             delta.requires_grad = True
             return delta
-    
+    @torch.enable_grad()
+    @torch.inference_mode(False)
     def clamp_batch_inf(self,d,alpha,g,eps):
-        return torch.cat([torch.clamp(d + alpha.view(-1,1,1,1,1,1) * torch.sign(g), min=-e
-                           , max=e) for e in eps],dim=1)
-    
+        return torch.clamp(d.clone() + alpha.clone().view(-1,1,1,1,1,1) * torch.sign(g.clone()), min=-eps.clone().view(1,-1,1,1,1,1)
+                           , max=eps.clone().view(1,-1,1,1,1,1))
+    @torch.enable_grad()
+    @torch.inference_mode(False)
     def clamp_batch_2(self,d,alpha,g,eps):
         g_norm = torch.norm(g.view(g.shape[0], -1), dim=1).view(-1, 1, 1, 1)
         scaled_g = g / (g_norm + 1e-10)
-        d = (d + scaled_g * alpha.view(-1,1,1,1,1,1)).view(d.size(0), -1).renorm(p=2, dim=0, maxnorm=eps).view_as(d)
+        d = (d + scaled_g * alpha.view(-1,1,1,1,1,1)).view(d.size(0), -1).renorm(p=2, dim=0, maxnorm=eps.view(1,-1,1,1,1,1)).view_as(d)
         return d
     
   
     #insert function decorator to ensure this ALWAys has grad
     @torch.enable_grad()
+    @torch.inference_mode(False)
     def attack_batch_pgd(self,  X, target, text_tokens, alpha, attack_iters,epsilon, restarts=1, early_stop=True):
         delta=self.init_batch_delta(X,epsilon).unsqueeze(0).repeat(alpha.shape[0],1,1,1,1,1)#make epsilon stacks of delta and repeat for each alpha so we have shape alpha,epsilon,B,3,224,224
-        losses=[]
+        # print("requires grad on delta? {} {}".format(delta.requires_grad,delta.retain_grad()))
+        # losses=[]
+        delta.retain_grad()
         return_dict={}
+        X=X.clone().detach()
+        text_tokens=text_tokens.clone().detach()
         for iter_count in range(max(attack_iters)):
-            new_images = delta+X
-            prompted_images = torch.div(torch.sub(new_images, self.mu_img), self.std_img) #normalize(new_images) but preserves grad
+            # print(iter_count)
+            new_images = torch.add(X, delta)
+            # print(new_images.shape)
+            # print("requires grad on new_images? {}".format(new_images.requires_grad))
+
+            prompted_images = torch.div(torch.sub(new_images, self.mu_img.clone()), self.std_img.clone()) #normalize(new_images) but preserves grad
+            # print("requires grad on prompted_images? {}".format(prompted_images.requires_grad))
+
             img_embed=self.model.encode_image(prompted_images.flatten(0,-4))
-            img_embed_norm = img_embed / img_embed.norm(dim=-1, keepdim=True)
+            # print(img_embed.shape)
+            # print("requires grad on img_embed? {} shape : {}".format(img_embed.requires_grad,img_embed.shape))
+            img_embed = img_embed / img_embed.norm(dim=-1, keepdim=True)
+            # print("requires grad on img_embed? {} shape : {}".format(img_embed.requires_grad,img_embed.shape))
+
             scale_text_embed=self.model.encode_text(text_tokens)
+            # print("requires grad on scale_text_embed? {} shape : {}".format(scale_text_embed.requires_grad,scale_text_embed.shape))
+
             scale_text_embed = scale_text_embed / scale_text_embed.norm(dim=-1, keepdim=True)
-            output = img_embed_norm @ scale_text_embed.t()
+            # print("requires grad on scale_text_embed? {} shape : {}".format(scale_text_embed.requires_grad,scale_text_embed.shape))
+
+            output = img_embed @ scale_text_embed.t()
+            # print("requires grad on output? {} shape : {}".format(output.requires_grad,output.shape))
+
             #unflatten the output into alpha,epsilon,B
             output = output.view(alpha.size(0),epsilon.size(0),X.size(0),-1)
-            loss = self.criterion(output.permute(-2,-1,0,1), torch.arange(prompted_images.size(2), device=self.device).unsqueeze(-1).unsqueeze(-1).repeat(1,alpha.size(0),epsilon.size(0)))
+            # print("requires grad on output? {} shape : {}".format(output.requires_grad,output.shape))
+            loss = self.criterion(output.permute(-2,-1,0,1), torch.arange(X.shape[0], device=self.device).unsqueeze(-1).unsqueeze(-1).repeat(1,alpha.size(0),epsilon.size(0)))
             loss.backward()
-            losses.append(loss)
+            # losses.append(loss.item())
+            #delta.retain_grad()
             grad = delta.grad.detach()
             d = delta[:, :, :, :,:,:]
             g = grad[:, :, :, :,:,:]
@@ -688,12 +714,14 @@ class myLightningModule(LightningModule):
         else:
             raise ValueError 
         #enable grad through our model to allow the attacks to work.
-        self.model.train()
+        self.model.eval()
+        torch.set_grad_enabled(True)
 
         self.model_ori.eval()
         self.test_alphas = torch.tensor([1/255, 2/255, 4/255])
         self.test_epsilons = torch.tensor([1/255, 2/255, 4/255])
         self.test_numsteps = torch.tensor([5, 10])
+
 
     def test_step(self, batch, batch_idx,  dataloader_idx=0, *args, **kwargs):
         images, target,text = batch
@@ -719,12 +747,12 @@ class myLightningModule(LightningModule):
 
         return_dict = self.testattack(images, target, text, self.test_alphas, self.test_numsteps, self.test_epsilons)
         #this returns a dict of "steps" entris, each entry has a tensor of shape Alphas, Epsilons, B, 3, 224, 224
-        result_data = []
+        results_data = []
         for Attack_step, result_data in return_dict.items():
             
             attacked_images, attacked_text = result_data
             img_embed_dirty = self.model.encode_image(attacked_images.flatten(0,-4)).detach()
-            scale_text_embed_dirty = self.model.encode_text(attacked_text[Attack_step].flatten(0,-2))
+            scale_text_embed_dirty = self.model.encode_text(attacked_text.flatten(0,-2))
             img_embed_norm_dirty = img_embed_dirty / img_embed_dirty.norm(dim=-1, keepdim=True)
             scale_text_embed_norm_dirty = scale_text_embed_dirty / scale_text_embed_dirty.norm(dim=-1, keepdim=True)
             output_prompt_adv = img_embed_norm_dirty @ scale_text_embed_norm_dirty.t()
@@ -733,15 +761,17 @@ class myLightningModule(LightningModule):
             output_prompt_adv = output_prompt_adv.view(self.test_alphas.size(0),self.test_epsilons.size(0),images.size(0),-1)
             img_embed_dirty = img_embed_dirty.view(self.test_alphas.size(0),self.test_epsilons.size(0),images.size(0),-1)
               
-            loss = self.criterion(output_prompt_adv.permute(-2,-1,0,1), torch.arange(images.size(0),device=images.device).unsqueeze(-1,-1).repeat(1,self.test_alphas.size(0),self.test_epsilons.size(0))) #shoudl be torch arange(images.size(0), device=self.device)
+            loss = self.test_criterion(output_prompt_adv.permute(-2,-1,0,1), torch.arange(images.size(0),device=images.device).unsqueeze(-1).unsqueeze(-1).repeat(1,self.test_alphas.size(0),self.test_epsilons.size(0))) #shoudl be torch arange(images.size(0), device=self.device)
+            # print(loss.shape)
+            loss=loss.permute(1,2,0).view(self.test_epsilons.size(0),self.test_alphas.size(0),images.size(0))
             for alpha in range(self.test_alphas.size(0)):
                 for epsilon in range(self.test_epsilons.size(0)):
-                        self.log(f'test_dirty_batch_loss_alpha_{self.test_alphas[alpha]}_epsilon_{self.test_epsilons[epsilon]}_numsteps_{Attack_step}', loss[alpha,epsilon], on_step=True, on_epoch=True, prog_bar=True, logger=True)
+                        self.log(f'test_dirty_batch_loss_alpha_{self.test_alphas[alpha]}_epsilon_{self.test_epsilons[epsilon]}_numsteps_{Attack_step}', loss[alpha,epsilon].mean(), on_step=True, on_epoch=True, prog_bar=True, logger=True)
                         acc1 = accuracy(output_prompt_adv[alpha,epsilon], torch.arange(images.size(0),device=images.device), topk=(1,))
                         self.log(f'test_dirty_batch_acc_alpha_{self.test_alphas[alpha]}_epsilon_{self.test_epsilons[epsilon]}_numsteps_{Attack_step}', acc1[0].item(), on_step=True, on_epoch=True, prog_bar=True, logger=True)
-                        result_data.append({"logits": img_embed_dirty[alpha,epsilon], "textlabels": target, "alpha": self.test_alphas[alpha], "epsilon": self.test_epsilons[epsilon], "step": Attack_step})
+                        results_data.append({"logits": img_embed_dirty[alpha,epsilon], "textlabels": target, "alpha": self.test_alphas[alpha], "epsilon": self.test_epsilons[epsilon], "step": Attack_step})
                     
-        self.test_attackedresults[dataloader_idx].extend(result_data)
+        self.test_attackedresults[dataloader_idx].extend(results_data)
        
         return loss
                     
