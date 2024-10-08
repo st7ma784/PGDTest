@@ -557,7 +557,8 @@ class MyDataModule(pl.LightningDataModule):
             self.val_datasets= [CustomtorchVisionDataset2(dataset, texts,self.default) for dataset, texts in zip(self.val_datasets, self.val_texts)]
 
             #take a 90:10 split of the validation datasets
-            self.test_datasets, self.val_datasets=[torch.utils.data.random_split(v,[int(0.9*len(v)),len(v)-int(0.9*len(v))]) for v in self.val_datasets]
+            splits=[torch.utils.data.random_split(v,[int(0.9*len(v)),len(v)-int(0.9*len(v))]) for v in self.val_datasets]
+            self.test_datasets, self.val_datasets= zip(*splits)
 
 
     def train_dataloader(self):
