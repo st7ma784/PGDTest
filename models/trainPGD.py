@@ -686,7 +686,7 @@ class myLightningModule(LightningModule):
             d = clamp(d, self.lower_limit - x, self.upper_limit - x)
             delta.data[:, :, :, :,:,:] = d
             delta.grad.zero_()
-            if iter_count in attack_iters:
+            if iter_count+1 in attack_iters:
                 #log the X+delta and the text tokens
                 return_dict.update({iter_count:(X+delta,text_tokens)})
                         
