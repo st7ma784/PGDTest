@@ -270,7 +270,7 @@ class MyDataModule(pl.LightningDataModule):
             self.train_dataset_dict.update({"coco":CustomCOCODatasetWithClasses(root,annFile,self.preprocess)})
             self.train_dataset = CustomCOCODatasetWithClasses(root,annFile,self.preprocess)
 
-            self.train_text_names_dict.update({"coco":get_text_prompts_train(self, self.train_dataset_dict["coco"])})
+            # self.train_text_names_dict.update({"coco":get_text_prompts_train(self, self.train_dataset_dict["coco"])})
                 # self.train_datasets = [CustomtorchVisionDataset2(dataset, class_names) for dataset, class_names in [(self.train_dataset_dict[k], self.train_text_names_dict[k]) for k in self.train_dataset_dict.keys()]]
             # self.val_datasets = self.load_val_datasets()
             ##################validation datasets##################

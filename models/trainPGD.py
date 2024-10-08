@@ -461,7 +461,8 @@ class myLightningModule(LightningModule):
         #print(text.shape)
         prompt_token = None
         text=text.squeeze(1)      
-
+        if target is None:
+            print("No target in dataloader {}".format(dataloader_idx))
         
         img_embed=self.model.encode_image(images)
         scale_text_embed=self.model.encode_text(text)
