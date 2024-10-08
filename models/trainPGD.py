@@ -635,8 +635,8 @@ class myLightningModule(LightningModule):
   
     #insert function decorator to ensure this ALWAys has grad
     @torch.enable_grad()
-    def attack_batch_pgd(self,  X, target, text_tokens, alpha, attack_iters, restarts=1, early_stop=True, epsilon=0):
-        delta=self.init_batch_delta(X,epsilon).unsqueeze(0).repeat(len(alpha))#make epsilon stacks of delta and repeat for each alpha so we have shape alpha,epsilon,B,3,224,224
+    def attack_batch_pgd(self,  X, target, text_tokens, alpha, attack_iters,epsilon, restarts=1, early_stop=True):
+        delta=self.init_batch_delta(X,epsilon).unsqueeze(0).repeat(alpha.shape[0])#make epsilon stacks of delta and repeat for each alpha so we have shape alpha,epsilon,B,3,224,224
         losses=[]
         return_dict={}
         for iter_count in range(max(attack_iters)):
@@ -689,8 +689,11 @@ class myLightningModule(LightningModule):
             raise ValueError 
         #enable grad through our model to allow the attacks to work.
         self.model.train()
-        
+
         self.model_ori.eval()
+        self.test_alphas = torch.tensor([1/255, 2/255, 4/255])
+        self.test_epsilons = torch.tensor([1/255, 2/255, 4/255])
+        self.test_numsteps = torch.tensor([5, 10])
 
     def test_step(self, batch, batch_idx,  dataloader_idx=0, *args, **kwargs):
         images, target,text = batch
