@@ -74,7 +74,7 @@ def train(config={
 #### This is a wrapper to make sure we log with Weights and Biases, You'll need your own user for this.
 def wandbtrain(config=None,dir=None,devices=None,accelerator=None,Dataset=None):
 
-    USER="PGNTeam" 
+    USER="st7ma784" 
     PROJECT="AllDataPGN"
     NAME="TestDeploy"
     import pytorch_lightning
