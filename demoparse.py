@@ -103,7 +103,7 @@ class baseparser(HyperOptArgumentParser):
         self.opt_list("--optimizer", default='sgd', type=str, options=["sgd","adam","adamw"],tunable=True)
         # dataset
         self.opt_list("--root", default=os.getenv("$PWD","./data"), options=[os.getenv("$PWD","/data")], type=str, tunable=False)
-        self.opt_list("--dataset", default='cifar10', options=["coco","tinyImageNet"],type=str, tunable=False)
+        self.opt_list("--dataset", default='cifar10', options=["coco","tinyImageNet"],type=str, tunable=True)
         self.opt_list("--image_size", default=224, type=int, tunable=False)
         # other
         self.opt_list("--attack_type", default="pgd", type=str,options=["pgd","cw","text","autoattack","noAttack"], tunable=False) # set this as tunable to trial different attack types
