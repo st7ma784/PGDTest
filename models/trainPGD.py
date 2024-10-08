@@ -649,7 +649,7 @@ class myLightningModule(LightningModule):
             output = img_embed_norm @ scale_text_embed.t()
             #unflatten the output into alpha,epsilon,B
             output = output.view(alpha.size(0),epsilon.size(0),X.size(0),-1)
-            loss = self.criterion(output.permute(-2,-1,0,1), torch.arange(prompted_images.size(0), device=self.device).unsqueeze(-1).unsqueeze(-1).repeat(1,alpha.size(0),epsilon.size(0)))
+            loss = self.criterion(output.permute(-2,-1,0,1), torch.arange(prompted_images.size(2), device=self.device).unsqueeze(-1).unsqueeze(-1).repeat(1,alpha.size(0),epsilon.size(0)))
             loss.backward()
             losses.append(loss)
             grad = delta.grad.detach()
@@ -676,7 +676,7 @@ class myLightningModule(LightningModule):
         self.test_attackedresults=defaultdict(list)
         self.test_data_loader_count = len(self.trainer.datamodule.val_dataloader())
         if self.args.get("test_attack_type","pgd")=="pgd":
-            self.testattack=self.attack_pgd
+            self.testattack=self.attack_batch_pgd
         elif self.args.get("test_attack_type","pgd")=="CW":
             self.testattack= self.attack_CW
         elif self.args.get("test_attack_type","pgd")=="text":
