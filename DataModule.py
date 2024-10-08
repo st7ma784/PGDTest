@@ -185,7 +185,7 @@ class MyDataModule(pl.LightningDataModule):
         self.tinyimagenet_root = tinyimagenet_root if tinyimagenet_root is not None else self.imagenet_root
         self.datasetname = dataset    #not used any more! 
         self.val_dataset_names = val_dataset_names if val_dataset_names is not None else ['cifar10', 'cifar100', 'STL10', 'SUN397', 'Food101',
-                                 'flowers102', 'dtd', 'fgvc_aircraft','tinyImageNet',# 'ImageNet'
+                                 'flowers102', 'dtd', 'fgvc_aircraft','tinyImageNet',# ''
                                 'Caltech256', 'PCAM'] #StanfordCars --url; no longer valid. 'EuroSAT' --ssl error 'Caltech101'- md5? 'tinyImageNet', 'ImageNet', oxfordpet' --labels not indexable
         self.train_dataset_names = val_dataset_names if val_dataset_names is not None else ['cifar10', 'cifar100', 'STL10', 'SUN397', 'Food101',
                                 'flowers102', 'dtd', 'fgvc_aircraft','tinyImageNet', #'ImageNet',
