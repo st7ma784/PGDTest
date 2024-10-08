@@ -32,7 +32,7 @@ def train(config={
     Dataset.batch_size=config["batch_size"]
     callbacks=[
         TQDMProgressBar(),
-        EarlyStopping(monitor="train_loss", mode="min",patience=10,check_finite=True,stopping_threshold=0.001),
+        #EarlyStopping(monitor="train_loss", mode="min",patience=10,check_finite=True,stopping_threshold=0.001),
     ]
     p=config['precision']
     if isinstance(p,str):
