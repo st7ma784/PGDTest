@@ -687,6 +687,11 @@ class myLightningModule(LightningModule):
             self.testattack=self.no_attack
         else:
             raise ValueError 
+        #enable grad through our model to allow the attacks to work.
+        self.model.train()
+        
+        self.model_ori.eval()
+
     def test_step(self, batch, batch_idx,  dataloader_idx=0, *args, **kwargs):
         images, target,text = batch
        
