@@ -77,12 +77,12 @@ class baseparser(HyperOptArgumentParser):
    
         self.opt_list("--save_freq", default=50, type=int, tunable=False)
         self.opt_list("--test_freq", default=3, type=int, tunable=False)
-        self.opt_list("--batch_size", default=64, options=[64], type=int, tunable=True)
+        self.opt_list("--batch_size", default=96, options=[96], type=int, tunable=True)
         self.opt_list("--num_workers", default=32, type=int, tunable=False)
         self.opt_list("--epochs", default=10, type=int, tunable=False)
         self.opt_list("--learning_rate", default=5e-4, options=[5e-5,5e-4,1e-4], type=float, tunable=True) #originally 5e-5
         self.opt_list("--weight_decay", default=0, type=float, tunable=False)
-        self.opt_list("--warmup", default=1000,options=[0,100,1000], type=int, tunable=False)
+        self.opt_list("--warmup", default=0,options=[0,100,1000], type=int, tunable=False)
         self.opt_list("--momentum", default=0.9, type=float, tunable=False)
         self.opt_list("--train_eps", default=2, options=[1,2,3], type=float, tunable=True)
         self.opt_list("--train_numsteps", default=5, options=[2,5,10], type=int, tunable=True)
