@@ -161,7 +161,7 @@ def CustomCOCODatasetWithClasses(CocoCaptions):
 
         if self.transform:
             img = self.transform(img)
-        return img, captions, classes
+        return img, classes, captions
 import clip
 
 class CustomtorchVisionDataset2(Dataset):
@@ -269,9 +269,10 @@ class MyDataModule(pl.LightningDataModule):
                 annFile=os.path.join(self.cache_dir,"annotations","captions_train2017.json")
                 root=os.path.join(self.cache_dir,"train2017")
                 self.train_dataset_dict.update({"coco":CustomCOCODatasetWithClasses(root,annFile,self.preprocess)})
+                self.train_dataset = CustomCOCODatasetWithClasses(root,annFile,self.preprocess)
+
                 self.train_text_names_dict.update({"coco":get_text_prompts_train(self, self.train_dataset_dict["coco"])})
-            self.train_datasets = [CustomtorchVisionDataset2(dataset, class_names) for dataset, class_names in [(self.train_dataset_dict[k], self.train_text_names_dict[k]) for k in self.train_dataset_dict.keys()]]
-            self.train_dataset = torch.utils.data.ConcatDataset(self.train_datasets)
+                # self.train_datasets = [CustomtorchVisionDataset2(dataset, class_names) for dataset, class_names in [(self.train_dataset_dict[k], self.train_text_names_dict[k]) for k in self.train_dataset_dict.keys()]]
             # self.val_datasets = self.load_val_datasets()
             ##################validation datasets##################
             val_dataset_dict = {}
