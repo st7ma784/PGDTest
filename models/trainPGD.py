@@ -952,7 +952,7 @@ class myLightningModule(LightningModule):
                             print("Epsilons: ",epsilons)
                             print("Steps: ",steps)
 
-                            mask= alphas==a & epsilons==e & steps==s
+                            mask= (alphas==a) & (epsilons==e) & (steps==s)
 
                             BadLabels.append(labels[mask])
                             BadLogits.append(logits[mask])
@@ -1064,6 +1064,8 @@ class myLightningModule(LightningModule):
                     alpha=torch.cat([val["alpha"] for val in dirty_results],dim=0).cpu().numpy() if threshold > 1 else dirty_results[0]["alpha"].cpu().numpy()
                     epsilons=torch.cat([val["epsilon"] for val in dirty_results],dim=0).cpu().numpy() if threshold > 1 else dirty_results[0]["epsilon"].cpu().numpy()
                     numsteps=torch.cat([val["step"] for val in dirty_results],dim=0).cpu().numpy() if threshold > 1 else dirty_results[0]["step"].cpu().numpy()
+
+                    assert logits.shape[0] == labels.shape[0] == alpha.shape[0] == epsilons.shape[0] == numsteps.shape[0]
                     np.savez(dirtyPath,logits=logits,labels=labels,alphas=alpha,epsilons=epsilons,numsteps=numsteps)
                     # print("Saved dirty results to {}".format(dirtyPath))
                     dirtyidx+=1
