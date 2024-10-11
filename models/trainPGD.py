@@ -943,10 +943,14 @@ class myLightningModule(LightningModule):
                         with open(os.path.join(path,file), 'rb') as f:
                             data = np.load(f, allow_pickle=True)
                             logits,labels=data["logits"],data["labels"]
+                            
                             alphas= a==data["alphas"]
                             epsilons= e==data["epsilons"]
                             steps= s==data["numsteps"]
                             #mask the data
+                            print("Alphas: ",alphas)
+                            print("Epsilons: ",epsilons)
+                            print("Steps: ",steps)
 
                             mask= alphas & epsilons & steps
 
