@@ -1006,8 +1006,8 @@ class myLightningModule(LightningModule):
                     clean_filename="clean"+filename+str(cleanidx)
                     cleanPath=os.path.join(path,clean_filename)
                     clean_results=self.test_cleanresults[dataset_idx][:threshold]
-                    logits=torch.cat([val["logits"] for val in clean_results],dim=0).cpu().numpy()
-                    labels=torch.cat([val["textlabels"] for val in clean_results],dim=0).cpu().numpy()
+                    logits=torch.cat([val["logits"] for val in clean_results],dim=0).cpu().numpy() if threshold > 1 else clean_results[0]["logits"].cpu().numpy()
+                    labels=torch.cat([val["textlabels"] for val in clean_results],dim=0).cpu().numpy() if threshold > 1 else clean_results[0]["textlabels"].cpu().numpy()
                     np.savez(cleanPath,logits=logits,labels=labels)
                     print("Saved clean results to {}".format(cleanPath))
                     self.test_cleanresults[dataset_idx]=self.test_cleanresults[dataset_idx][threshold:]
@@ -1016,8 +1016,8 @@ class myLightningModule(LightningModule):
                     dirty_filename="dirty"+filename+str(dirtyidx)
                     dirtyPath=os.path.join(path,dirty_filename)
                     dirty_results=self.test_attackedresults[self.dataset_idx][:threshold]
-                    logits=torch.cat([val["logits"] for val in dirty_results],dim=0).cpu().numpy()
-                    labels=torch.cat([val["textlabels"] for val in dirty_results],dim=0).cpu().numpy()
+                    logits=torch.cat([val["logits"] for val in dirty_results],dim=0).cpu().numpy() if threshold > 1 else dirty_results[0]["logits"].cpu().numpy()
+                    labels=torch.cat([val["textlabels"] for val in dirty_results],dim=0).cpu().numpy() if threshold > 1 else dirty_results[0]["textlabels"].cpu().numpy()
                     test_alphas=self.test_alphas.cpu().numpy()
                     test_epsilons=self.test_epsilons.cpu().numpy()
                     test_numsteps=self.test_numsteps.cpu().numpy()
