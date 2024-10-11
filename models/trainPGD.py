@@ -1015,7 +1015,7 @@ class myLightningModule(LightningModule):
                     #
                     clean_filename="clean"+filename+str(cleanidx)
                     cleanPath=os.path.join(path,clean_filename)
-                    print("Saving clean results {} to {}".format(len(clean_results),cleanPath))
+                    # print("Saving clean results {} to {}".format(len(clean_results),cleanPath))
                     logits=torch.cat([val["logits"] for val in clean_results],dim=0).cpu().numpy() if threshold > 1 else clean_results[0]["logits"].cpu().numpy()
                     labels=torch.cat([val["textlabels"] for val in clean_results],dim=0).cpu().numpy() if threshold > 1 else clean_results[0]["textlabels"].cpu().numpy()
                     np.savez(cleanPath,logits=logits,labels=labels)
@@ -1025,14 +1025,14 @@ class myLightningModule(LightningModule):
                     dirty_filename="dirty"+filename+str(dirtyidx)
                     dirtyPath=os.path.join(path,dirty_filename)
                     dirty_results=[self.test_attackedresults[dataset_idx].get(False) for _ in range(min(self.test_attackedresults[dataset_idx].qsize(),threshold))]
-                    print("Saving dirty results {} to {}".format(len(dirty_results),dirtyPath))
+                    # print("Saving dirty results {} to {}".format(len(dirty_results),dirtyPath))
                     logits=torch.cat([val["logits"] for val in dirty_results],dim=0).cpu().numpy() if threshold > 1 else dirty_results[0]["logits"].cpu().numpy()
                     labels=torch.cat([val["textlabels"] for val in dirty_results],dim=0).cpu().numpy() if threshold > 1 else dirty_results[0]["textlabels"].cpu().numpy()
                     test_alphas=self.test_alphas.cpu().numpy()
                     test_epsilons=self.test_epsilons.cpu().numpy()
                     test_numsteps=self.test_numsteps.cpu().numpy()
                     np.savez(dirtyPath,logits=logits,labels=labels,alphas=test_alphas,epsilons=test_epsilons,numsteps=test_numsteps)
-                    print("Saved dirty results to {}".format(dirtyPath))
+                    # print("Saved dirty results to {}".format(dirtyPath))
                     dirtyidx+=1
                 # print("Saved results for dataset {}".format(dataset_idx))
             if all([self.test_cleanresults[idx].empty() for idx in range(self.test_data_loader_count)]) and all([self.test_attackedresults[idx].empty() for idx in range(self.test_data_loader_count)]):
