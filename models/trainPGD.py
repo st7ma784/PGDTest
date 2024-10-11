@@ -999,6 +999,7 @@ class myLightningModule(LightningModule):
         abortcount=0
         while True:
             for dataset_idx in range(self.test_data_loader_count):
+                print("Saving results for dataset {}".format(dataset_idx))
                 filename="results_{}_{}_pt.npz".format(version,dataset_idx)
                 if len(self.test_cleanresults[dataset_idx]) > threshold:
                         #take the first 1000 results and save them to disk.
@@ -1022,6 +1023,7 @@ class myLightningModule(LightningModule):
                     np.savez(dirtyPath,logits=logits,labels=labels,alphas=test_alphas,epsilons=test_epsilons,numsteps=test_numsteps)
                     self.test_attackedresults[dataset_idx]=self.test_attackedresults[dataset_idx][threshold:]
                     dirtyidx+=1
+                print("Saved results for dataset {}".format(dataset_idx))
             if len(self.test_cleanresults[dataset_idx])<threshold and len(self.test_attackedresults[dataset_idx]) <threshold:
                 #ready to exit
                 if abortcount>self.data_loader_count*2:
