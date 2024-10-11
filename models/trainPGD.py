@@ -890,8 +890,7 @@ class myLightningModule(LightningModule):
                 clean_files=list(filter(lambda x: str("_{}_pt".format(dataset_idx)) in x,cleanfilenames))
                 dirty_files=list(filter(lambda x: str("_{}_pt".format(dataset_idx)) in x,dirtyfilenames))
                 
-                print("CLEAN FILES for {} : {} ".format(dataset_idx,list(clean_files)), "\n\n")
-                print("DIRTY FILES for {} : {} ".format(dataset_idx,list(dirty_files)), "\n\n")
+
                 GoodLabels=[]
                 GoodLogits=[]
                 for file in list(clean_files):#
@@ -902,11 +901,9 @@ class myLightningModule(LightningModule):
                     with open(os.path.join(path,file), 'rb') as f:
                         data = np.load(f, allow_pickle=True)
                     #
-                        print(data)
                         GoodLabels.append(data["labels"])
                         GoodLogits.append(data["logits"])
                     #delete the file
-                    print("Deleting file: ",os.path.join(path,file))
                     os.remove(os.path.join(path,file))
                     time.sleep(1)
                 GoodLabels=np.concatenate(GoodLabels)
@@ -946,17 +943,10 @@ class myLightningModule(LightningModule):
                         with open(os.path.join(path,file), 'rb') as f:
                             data = np.load(f, allow_pickle=True)
                             logits,labels=data["logits"],data["labels"]
-                            
                             alphas= data["alphas"]
                             epsilons= data["epsilons"]
-                            steps= data["numsteps"]
-                            #mask the data
-                            print("Alphas: ",alphas)
-                            print("Epsilons: ",epsilons)
-                            print("Steps: ",steps)
-
+                            steps= data["numsteps"]                       
                             mask= (alphas==a) & (epsilons==e) & (steps==s)
-
                             BadLabels.append(labels[mask])
                             BadLogits.append(logits[mask])
                             
