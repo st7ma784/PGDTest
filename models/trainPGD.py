@@ -895,8 +895,12 @@ class myLightningModule(LightningModule):
                 GoodLabels=[]
                 GoodLogits=[]
                 for file in clean_files:
+                    if not os.path.exists(os.path.join(path,file)):
+                        print("File {} does not exist".format(file))
+                        continue
 
                     data=np.load(os.path.join(path,file))
+                    print(data.keys())
                     GoodLabels.append(data["labels"])
                     GoodLogits.append(data["logits"])
                     #delete the file
