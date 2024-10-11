@@ -1007,5 +1007,6 @@ class myLightningModule(LightningModule):
                     np.savez(dirtyPath,logits=logits,labels=labels,alphas=test_alphas,epsilons=test_epsilons,numsteps=test_numsteps)
                     self.test_attackedresults[dataset_idx]=self.test_attackedresults[dataset_idx][threshold:]
                     dirtyidx+=1
-            time.sleep(10)#sleep for 10 seconds before checking again, because we know it wont grow that much in that time.
+            if len(self.test_cleanresults[dataset_idx])<threshold and len(self.test_attackedresults[dataset_idx]) <threshold:
+                time.sleep(10)#sleep for 10 seconds before checking again, because we know it wont grow that much in that time.
             
