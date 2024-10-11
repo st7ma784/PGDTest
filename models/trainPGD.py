@@ -1022,10 +1022,10 @@ class myLightningModule(LightningModule):
                     dirtyidx+=1
             if len(self.test_cleanresults[dataset_idx])<threshold and len(self.test_attackedresults[dataset_idx]) <threshold:
                 #ready to exit
-                if abort>self.data_loader_count*2:
+                if abortcount>self.data_loader_count*2:
                     break
                 else:
-                    abort+=1
+                    abortcount+=1
                     threshold=min([len(self.test_attackedresults[idx]) for idx in range(self.test_data_loader_count)]+[len(self.test_cleanresults[idx]) for idx in range(self.test_data_loader_count)])
             else:
                 threshold= int(self.args.get("test_batch_size",8)/2)
