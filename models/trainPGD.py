@@ -883,8 +883,8 @@ class myLightningModule(LightningModule):
             version=self.version
             dirtyfilenames=filter(lambda x: x.startswith("dirtyresults_{}".format(version)),filenames)
             cleanfilenames=filter(lambda x: x.startswith("cleanresults_{}".format(version)),filenames)
-            print("CLEAN FILES: ",cleanfilenames, "\n\n")
-            print("DIRTY FILES: ",dirtyfilenames, "\n\n")
+            print("CLEAN FILES: ",list(cleanfilenames), "\n\n")
+            print("DIRTY FILES: ",list(dirtyfilenames), "\n\n")
             patience=0
             while len(list(dirtyfilenames)) == 0 or len(list(cleanfilenames)) == 0:
                 time.sleep(5)
