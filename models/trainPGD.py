@@ -808,6 +808,7 @@ class myLightningModule(LightningModule):
         self.test_epsilons = torch.tensor([1/255, 2/255, 4/255],device=self.device)
         self.test_numsteps = torch.tensor([5, 10],device=self.device)
         #instead of saving the results to memory, were going to save them to disk.
+        #note : if using multiple nodes, this will need to be a shared file system, or a database... or revert to saving to memory, and praying you have enough!!
         self.save_result_worker_thread=threading.Thread(target=self.save_result_worker)
         self.save_result_worker_thread.start()
 
@@ -933,7 +934,7 @@ class myLightningModule(LightningModule):
                         print(data)
                         alphas=data["alphas"]
                         epsilons=data["epsilons"]
-                        steps=data["steps"]
+                        steps=data["numsteps"]
                         #zip the datas together
                         for alpha,epsilon,step in zip(alphas,epsilons,steps):
                             key=(alpha,epsilon,step)
@@ -950,7 +951,7 @@ class myLightningModule(LightningModule):
                             logits,labels=data["logits"],data["labels"]
                             alphas=data["alphas"]==a
                             epsilons=data["epsilons"]==e
-                            steps=data["steps"]==s
+                            steps=data["numsteps"]==s
                             mask=alphas & epsilons & steps
                             BadLabels.append(labels[mask])
                             BadLogits.append(logits[mask])
