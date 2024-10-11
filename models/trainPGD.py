@@ -1000,9 +1000,7 @@ class myLightningModule(LightningModule):
         version=self.version
         threshold=10
         #if we're in debug mode set threshold to 8
-        if self.args.get("debug",False):
-            threshold = 2
-            print("Debug mode, setting threshold to {}".format(threshold))
+    
         abortcount=0
         while True:
             for dataset_idx in range(self.test_data_loader_count):
@@ -1019,7 +1017,7 @@ class myLightningModule(LightningModule):
                     logits=torch.cat([val["logits"] for val in clean_results],dim=0).cpu().numpy() if threshold > 1 else clean_results[0]["logits"].cpu().numpy()
                     labels=torch.cat([val["textlabels"] for val in clean_results],dim=0).cpu().numpy() if threshold > 1 else clean_results[0]["textlabels"].cpu().numpy()
                     np.savez(cleanPath,logits=logits,labels=labels)
-                    print("Saved clean results to {}".format(cleanPath))
+                    # print("Saved clean results to {}".format(cleanPath))
                     cleanidx+=1
                 if not self.test_attackedresults[dataset_idx].empty():
                     dirty_filename="dirty"+filename+str(dirtyidx)
