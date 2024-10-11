@@ -894,7 +894,7 @@ class myLightningModule(LightningModule):
                 print("DIRTY FILES for {} : {} ".format(dataset_idx,list(dirty_files)), "\n\n")
                 GoodLabels=[]
                 GoodLogits=[]
-                for file in clean_files:
+                for file in list(clean_files):
                     if not os.path.exists(os.path.join(path,file)):
                         print("File {} does not exist".format(file))
                         continue
