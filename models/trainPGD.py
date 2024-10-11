@@ -913,7 +913,7 @@ class myLightningModule(LightningModule):
                     BadLabels=[]
                     BadLogits=[]
                     for file in val:
-                        data=np.load(file)
+                        data=np.load(os.path.join(path,file))
                         BadLabels.append(data["labels"])
                         BadLogits.append(data["logits"])
                                        
