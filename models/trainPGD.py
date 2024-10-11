@@ -902,7 +902,6 @@ class myLightningModule(LightningModule):
 
                     with open(os.path.join(path,file), 'rb') as f:
                         data = np.load(f, allow_pickle=True)
-                    #
                         GoodLabels.append(data["labels"])
                         GoodLogits.append(data["logits"])
                     #delete the file
