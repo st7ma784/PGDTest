@@ -920,7 +920,7 @@ class myLightningModule(LightningModule):
                 BadLogits=[]
                 alpha_eps_step_dict = defaultdict(list)
                 for file in dirty_files:
-                    alpha_eps_step_dict[(data["alpha"],data["epsilon"],data["step"])].append(file)
+                    alpha_eps_step_dict[(data["alphas"],data["epsilons"],data["numsteps"])].append(file)
 
                 for key, val in alpha_eps_step_dict.items():
                     BadLabels=[]
