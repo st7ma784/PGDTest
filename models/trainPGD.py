@@ -994,7 +994,7 @@ class myLightningModule(LightningModule):
         threshold=10
         #if we're in debug mode set threshold to 8
         if self.args.get("debug",False):
-            threshold = 1
+            threshold = 2
             print("Debug mode, setting threshold to {}".format(threshold))
         abortcount=0
         while True:
@@ -1035,8 +1035,8 @@ class myLightningModule(LightningModule):
                 else:
                     abortcount+=1
                     threshold=min([len(self.test_attackedresults[idx]) for idx in range(self.test_data_loader_count)]+[len(self.test_cleanresults[idx]) for idx in range(self.test_data_loader_count)])
-            else:
-                threshold= int(self.args.get("test_batch_size",8)/2)
+            # else:
+            #     threshold= int(self.args.get("test_batch_size",8)/2)
         
         print("Exiting save results worker")
         return
