@@ -873,6 +873,7 @@ class myLightningModule(LightningModule):
             #queue the worker to 
             #read in all files and begin processing them
             filenames=os.listdir(self.args.get("output_dir","./results"))
+            print(filenames)
             version="_".join([str(val) for val in self.args.values()])
             dirtyfilenames=filter(lambda x: x.startswith("dirtyresults_{}".format(version)),filenames)
             cleanfilenames=filter(lambda x: x.startswith("cleanresults_{}".format(version)),filenames)
