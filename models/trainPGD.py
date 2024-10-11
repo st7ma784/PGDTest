@@ -925,7 +925,8 @@ class myLightningModule(LightningModule):
                         steps=data["numsteps"]
                         #stack the data
                         keys=np.stack([alphas,epsilons,steps],axis=1)
-                        #find unique keys
+                        #shape is B,3
+                        
                         unique_keys=np.unique(keys,axis=0)
                         for key in unique_keys:
                             print("Key is ",key)
