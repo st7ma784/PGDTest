@@ -770,7 +770,7 @@ class myLightningModule(LightningModule):
             d = delta[:, :, :, :]
             g = grad[:, :, :, :]
             x = X[:, :, :, :]
-            d=self.clamp(d,alpha,g,epsilon)
+            d=self.clamp(d.to(self.device),alpha.to(self.device),g.to(self.device),epsilon.to(self.device))
             d = clamp(d, self.lower_limit - x, self.upper_limit - x)
             delta.data[:, :, :, :] = d
             delta.grad.zero_()
@@ -799,9 +799,9 @@ class myLightningModule(LightningModule):
         torch.set_grad_enabled(True)
 
         self.model_ori.eval()
-        self.test_alphas = torch.tensor([1/255, 2/255, 4/255])
-        self.test_epsilons = torch.tensor([1/255, 2/255, 4/255])
-        self.test_numsteps = torch.tensor([5, 10])
+        self.test_alphas = torch.tensor([1/255, 2/255, 4/255],device=self.device)
+        self.test_epsilons = torch.tensor([1/255, 2/255, 4/255],device=self.device)
+        self.test_numsteps = torch.tensor([5, 10],device=self.device)
         #instead of saving the results to memory, were going to save them to disk.
         self.save_result_worker_thread=threading.Thread(target=self.save_result_worker)
         self.save_result_worker_thread.start()
