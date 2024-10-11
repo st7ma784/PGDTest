@@ -900,7 +900,7 @@ class myLightningModule(LightningModule):
                         continue
 
                     data=np.load(os.path.join(path,file))
-                    print(data.keys())
+                    print(data)
                     GoodLabels.append(data["labels"])
                     GoodLogits.append(data["logits"])
                     #delete the file
