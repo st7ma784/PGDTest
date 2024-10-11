@@ -884,8 +884,8 @@ class myLightningModule(LightningModule):
                     data=np.load(file)
                     GoodLabels.append(data["labels"])
                     GoodLogits.append(data["logits"])
-                GoodLabels=np.concatenate(GoodLabels)
-                GoodLogits=np.concatenate(GoodLogits)
+                GoodLabels=np.concatenate(GoodLabels) if len(GoodLabels) > 1 else GoodLabels[0]
+                GoodLogits=np.concatenate(GoodLogits) if len(GoodLogits) > 1 else GoodLogits[0]
                 self.Cleanclassifier.fit(GoodLogits, GoodLabels)
                 cleanscore=self.Cleanclassifier.score(GoodLogits, GoodLabels)
                 BadLabels=[]
@@ -900,9 +900,10 @@ class myLightningModule(LightningModule):
                     for file in val:
                         data=np.load(file)
                         BadLabels.append(data["labels"])
-                        BadLogits.append(data["logits"])                   
-                    BadLabels=np.concatenate(BadLabels)
-                    BadLogits=np.concatenate(BadLogits)
+                        BadLogits.append(data["logits"])
+                                       
+                    BadLabels=np.concatenate(BadLabels) if len(BadLabels) > 1 else BadLabels[0]
+                    BadLogits=np.concatenate(BadLogits) if len(BadLogits) > 1 else BadLogits[0]
                     self.Dirtyclassifier.fit(BadLogits, BadLabels)
                     self.generalclassifier.fit(np.concatenate([GoodLogits,BadLogits]), np.concatenate([GoodLabels,BadLabels]))
                     self.log( "Test Clean Classifier on Dirty Features on dataset {} alpha {} epsilon {} step {}".format(dataset_idx,key[0],key[1],key[2]),self.Cleanclassifier.score(BadLogits, BadLabels))
