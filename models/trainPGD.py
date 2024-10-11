@@ -906,8 +906,8 @@ class myLightningModule(LightningModule):
                     #delete the file
                     os.remove(os.path.join(path,file))
                     time.sleep(1)
-                GoodLabels=np.concatenate(GoodLabels)
-                GoodLogits=np.concatenate(GoodLogits)
+                GoodLabels=np.concatenate(GoodLabels) if len(GoodLabels) > 1 else GoodLabels[0]
+                GoodLogits=np.concatenate(GoodLogits) if len(GoodLogits) > 1 else GoodLogits[0]
                 self.Cleanclassifier.fit(GoodLogits, GoodLabels)
                 cleanscore=self.Cleanclassifier.score(GoodLogits, GoodLabels)
                 BadLabels=[]
@@ -931,7 +931,6 @@ class myLightningModule(LightningModule):
                         for key in unique_keys:
                             print("Key is ",key)
                             key=tuple(key)
-                            # print("Key is ",key)
                             if file not in alpha_eps_step_dict[key]:
                                 alpha_eps_step_dict[key].append(file)
                             #we do this so we can run one test at a time and not store all the data in memory
