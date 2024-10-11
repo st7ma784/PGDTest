@@ -887,8 +887,8 @@ class myLightningModule(LightningModule):
 
             for dataset_idx in range(self.test_data_loader_count):
 
-                clean_files=filter(lambda x: str("_{}_pt".format(dataset_idx)) in x,cleanfilenames)
-                dirty_files=filter(lambda x: str("_{}_pt".format(dataset_idx)) in x,dirtyfilenames)
+                clean_files=list(filter(lambda x: str("_{}_pt".format(dataset_idx)) in x,cleanfilenames))
+                dirty_files=list(filter(lambda x: str("_{}_pt".format(dataset_idx)) in x,dirtyfilenames))
                 
                 print("CLEAN FILES for {} : {} ".format(dataset_idx,list(clean_files)), "\n\n")
                 print("DIRTY FILES for {} : {} ".format(dataset_idx,list(dirty_files)), "\n\n")
