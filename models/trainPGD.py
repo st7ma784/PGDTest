@@ -18,6 +18,7 @@ import numpy as np
 from collections import defaultdict
 import threading
 import time
+import queue
 def multiGPU_CLIP(model, images, text_tokens):
    
     #images shape is (batch, 3, 224, 224)
@@ -781,8 +782,9 @@ class myLightningModule(LightningModule):
     def on_test_epoch_start(self):
         self.mu_img = torch.tensor((0.485, 0.456, 0.406)).view(3,1,1).to(self.device)
         self.std_img = torch.tensor((0.229, 0.224, 0.225)).view(3,1,1).to(self.device)
-        self.test_cleanresults=defaultdict(list)
-        self.test_attackedresults=defaultdict(list)
+        #to be thread safe we should create queues insead of lists.
+        self.test_cleanresults=defaultdict(queue.Queue)
+        self.test_attackedresults=defaultdict(queue.Queue)
         self.test_data_loader_count = len(self.trainer.datamodule.val_dataloader())
         if self.args.get("test_attack_type","pgd")=="pgd":
             self.testattack=self.attack_batch_pgd
@@ -859,6 +861,8 @@ class myLightningModule(LightningModule):
     
     
     def on_test_epoch_end(self):
+        self.test_epoch_end_called=True
+
 
         #We need to modify the following code to sort by alpha, epsilon, step and then run the linear probes.
         #make a new dict with id as key as compound key of alpha, epsilon, step and then logits:labels as value
@@ -873,6 +877,8 @@ class myLightningModule(LightningModule):
             self.generalclassifier = LogisticRegression(random_state=0, C=0.316, max_iter=100, verbose=0, n_jobs=-1)
         if hasattr(self,"save_result_worker_thread"):
             #queue the worker to 
+            #wait for the worker to finish
+            self.save_result_worker_thread.join()
             #read in all files and begin processing them
             filenames=os.listdir(self.args.get("output_dir","./results"))
             print(filenames)
@@ -1003,22 +1009,23 @@ class myLightningModule(LightningModule):
             for dataset_idx in range(self.test_data_loader_count):
                 print("Saving results for dataset {}".format(dataset_idx))
                 filename="results_{}_{}_pt.npz".format(version,dataset_idx)
-                if len(self.test_cleanresults[dataset_idx]) >= threshold:
+                if not self.test_cleanresults[dataset_idx].empty():
                         #take the first 1000 results and save them to disk.
+                    #take first n results and save them to disk, remove them from the list
+                    clean_results=[self.test_cleanresults[dataset_idx].get(False) for _ in range(min(self.test_cleanresults[dataset_idx].qsize(),threshold))]
+                    #
                     clean_filename="clean"+filename+str(cleanidx)
                     cleanPath=os.path.join(path,clean_filename)
-                    clean_results=self.test_cleanresults[dataset_idx][:threshold]
                     print("Saving clean results {} to {}".format(len(clean_results),cleanPath))
                     logits=torch.cat([val["logits"] for val in clean_results],dim=0).cpu().numpy() if threshold > 1 else clean_results[0]["logits"].cpu().numpy()
                     labels=torch.cat([val["textlabels"] for val in clean_results],dim=0).cpu().numpy() if threshold > 1 else clean_results[0]["textlabels"].cpu().numpy()
                     np.savez(cleanPath,logits=logits,labels=labels)
                     print("Saved clean results to {}".format(cleanPath))
-                    self.test_cleanresults[dataset_idx]=self.test_cleanresults[dataset_idx][threshold:]
                     cleanidx+=1
-                if len(self.test_attackedresults[dataset_idx]) >= threshold:
+                if not self.test_attackedresults[dataset_idx].empty():
                     dirty_filename="dirty"+filename+str(dirtyidx)
                     dirtyPath=os.path.join(path,dirty_filename)
-                    dirty_results=self.test_attackedresults[self.dataset_idx][:threshold]
+                    dirty_results=[self.test_attackedresults[dataset_idx].get(False) for _ in range(min(self.test_attackedresults[dataset_idx].qsize(),threshold))]
                     print("Saving dirty results {} to {}".format(len(dirty_results),dirtyPath))
                     logits=torch.cat([val["logits"] for val in dirty_results],dim=0).cpu().numpy() if threshold > 1 else dirty_results[0]["logits"].cpu().numpy()
                     labels=torch.cat([val["textlabels"] for val in dirty_results],dim=0).cpu().numpy() if threshold > 1 else dirty_results[0]["textlabels"].cpu().numpy()
@@ -1030,15 +1037,10 @@ class myLightningModule(LightningModule):
                     self.test_attackedresults[dataset_idx]=self.test_attackedresults[dataset_idx][threshold:]
                     dirtyidx+=1
                 print("Saved results for dataset {}".format(dataset_idx))
-            if len(self.test_cleanresults[dataset_idx])<threshold and len(self.test_attackedresults[dataset_idx]) <threshold:
-                #ready to exit
-                if abortcount>self.data_loader_count*2:
+            if all([self.test_cleanresults[idx].empty() for idx in range(self.test_data_loader_count)]) and all([self.test_attackedresults[idx].empty() for idx in range(self.test_data_loader_count)]):
+                #if test_epoch_end has been called, we can exit the loop
+                if self.test_epoch_end_called:
                     break
-                    #exit the loop
-
-                else:
-                    abortcount+=1
-                    threshold=min([len(self.test_attackedresults[idx]) for idx in range(self.test_data_loader_count)]+[len(self.test_cleanresults[idx]) for idx in range(self.test_data_loader_count)])
             # else:
             #     threshold= int(self.args.get("test_batch_size",8)/2)
         
