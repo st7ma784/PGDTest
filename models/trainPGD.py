@@ -782,7 +782,8 @@ class myLightningModule(LightningModule):
     def on_test_epoch_start(self):
         self.mu_img = torch.tensor((0.485, 0.456, 0.406)).view(3,1,1).to(self.device)
         self.std_img = torch.tensor((0.229, 0.224, 0.225)).view(3,1,1).to(self.device)
-        #to be thread safe we should create queues insead of lists.
+        #to be thread safe we should create queues insead of lists.#
+        self.test_epoch_end_called=False
         self.test_cleanresults=defaultdict(queue.Queue)
         self.test_attackedresults=defaultdict(queue.Queue)
         self.test_data_loader_count = len(self.trainer.datamodule.val_dataloader())
