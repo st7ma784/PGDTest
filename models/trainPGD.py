@@ -879,30 +879,22 @@ class myLightningModule(LightningModule):
             #wait for the worker to finish
             self.save_result_worker_thread.join()
             #read in all files and begin processing them
-            filenames=os.listdir(self.args.get("output_dir","./results"))
+            path=self.args.get("output_dir","./results")
+            filenames=os.listdir(path)
             version=self.version
             dirtyfilenames=filter(lambda x: x.startswith("dirtyresults_{}".format(version)),filenames)
             cleanfilenames=filter(lambda x: x.startswith("cleanresults_{}".format(version)),filenames)
             print("CLEAN FILES: ",list(cleanfilenames), "\n\n")
             print("DIRTY FILES: ",list(dirtyfilenames), "\n\n")
-            patience=0
-            while len(list(dirtyfilenames)) == 0 or len(list(cleanfilenames)) == 0:
-                time.sleep(5)
-                patience+=1
-                dirtyfilenames=filter(lambda x: x.startswith("dirtyresults_{}".format(version)),filenames)
-                cleanfilenames=filter(lambda x: x.startswith("cleanresults_{}".format(version)),filenames)
-                if patience > 10:
-                    print("No results found after 50 seconds")
-                    break
-
+          
 
             for dataset_idx in range(self.test_data_loader_count):
-                clean_files=filter(lambda x: "_{}_pt".format(dataset_idx) in x,cleanfilenames)
-                dirty_files=filter(lambda x:"_{}_pt".format(dataset_idx) in x,dirtyfilenames)
+                clean_files=filter(lambda x: str("_{}_pt".format(dataset_idx)) in x,cleanfilenames)
+                dirty_files=filter(lambda x: str("_{}_pt".format(dataset_idx)) in x,dirtyfilenames)
                 GoodLabels=[]
                 GoodLogits=[]
                 for file in clean_files:
-                    data=np.load(file)
+                    data=np.load(os.path.join(path,file))
                     GoodLabels.append(data["labels"])
                     GoodLogits.append(data["logits"])
                 GoodLabels=np.concatenate(GoodLabels) if len(GoodLabels) > 1 else GoodLabels[0]
