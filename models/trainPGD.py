@@ -894,13 +894,14 @@ class myLightningModule(LightningModule):
                 print("DIRTY FILES for {} : {} ".format(dataset_idx,list(dirty_files)), "\n\n")
                 GoodLabels=[]
                 GoodLogits=[]
-                for file in list(clean_files):
+                for file in list(clean_files):#
+                    time.sleep(1)
+                    print("here")
                     print("Processing file: ",os.path.join(path,file))
                     if not os.path.exists(os.path.join(path,file)):
                         print("File {} does not exist".format(file))
                         continue
 
-                    #data=np.load(os.path.join(path,file))
                     with open(os.path.join(path,file), 'rb') as f:
                         data = np.load(f, allow_pickle=True)
                     #
