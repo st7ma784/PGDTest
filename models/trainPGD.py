@@ -1026,5 +1026,5 @@ class myLightningModule(LightningModule):
                     abort+=1
                     threshold=min([len(self.test_attackedresults[idx]) for idx in range(self.test_data_loader_count)]+[len(self.test_cleanresults[idx]) for idx in range(self.test_data_loader_count)])
             else:
-                threshold=self.args.get(int("test_batch_size"/2),8)
+                threshold= int(self.args.get("test_batch_size",8)/2)
             
