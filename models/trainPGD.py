@@ -931,7 +931,8 @@ class myLightningModule(LightningModule):
                         for alpha,epsilon,step in zip(alphas,epsilons,steps):
                             key=(alpha,epsilon,step)
                             # print("Key is ",key)
-                            alpha_eps_step_dict[key].append(file)
+                            if file not in alpha_eps_step_dict[key]:
+                                alpha_eps_step_dict[key].append(file)
                             #we do this so we can run one test at a time and not store all the data in memory
                     #delete the file
 
