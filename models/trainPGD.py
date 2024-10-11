@@ -877,9 +877,11 @@ class myLightningModule(LightningModule):
             dirtyfilenames=filter(lambda x: x.startswith("dirtyresults_{}".format(version)),filenames)
             cleanfilenames=filter(lambda x: x.startswith("cleanresults_{}".format(version)),filenames)
             patience=0
-            while len(dirtyfilenames) == 0 or len(cleanfilenames) == 0:
+            while len(list(dirtyfilenames)) == 0 or len(list(cleanfilenames)) == 0:
                 time.sleep(5)
                 patience+=1
+                dirtyfilenames=filter(lambda x: x.startswith("dirtyresults_{}".format(version)),filenames)
+                cleanfilenames=filter(lambda x: x.startswith("cleanresults_{}".format(version)),filenames)
                 if patience > 10:
                     print("No results found after 50 seconds")
                     break
