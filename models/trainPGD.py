@@ -896,8 +896,8 @@ class myLightningModule(LightningModule):
 
 
             for dataset_idx in range(self.test_data_loader_count):
-                clean_files=filter(lambda x: x.endswith(".npz") and x.startswith("cleanresults_{}_{}".format(version,dataset_idx)),cleanfilenames)
-                dirty_files=filter(lambda x: x.endswith(".npz") and x.startswith("dirtyresults_{}_{}".format(version,dataset_idx)),dirtyfilenames)
+                clean_files=filter(lambda x: x.startswith("cleanresults_{}_{}".format(version,dataset_idx)),cleanfilenames)
+                dirty_files=filter(lambda x: x.startswith("dirtyresults_{}_{}".format(version,dataset_idx)),dirtyfilenames)
                 GoodLabels=[]
                 GoodLogits=[]
                 for file in clean_files:
