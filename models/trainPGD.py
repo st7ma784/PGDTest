@@ -906,8 +906,8 @@ class myLightningModule(LightningModule):
                     #delete the file
                     print("Deleting file: ",os.path.join(path,file))
                     os.remove(os.path.join(path,file))
-                GoodLabels=np.concatenate(GoodLabels) if len(GoodLabels) > 1 else GoodLabels[0]
-                GoodLogits=np.concatenate(GoodLogits) if len(GoodLogits) > 1 else GoodLogits[0]
+                GoodLabels=np.concatenate(GoodLabels)
+                GoodLogits=np.concatenate(GoodLogits)
                 self.Cleanclassifier.fit(GoodLogits, GoodLabels)
                 cleanscore=self.Cleanclassifier.score(GoodLogits, GoodLabels)
                 BadLabels=[]
