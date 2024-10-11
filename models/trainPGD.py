@@ -870,6 +870,7 @@ class myLightningModule(LightningModule):
         if not hasattr(self,"generalclassifier"):
             self.generalclassifier = LogisticRegression(random_state=0, C=0.316, max_iter=100, verbose=0, n_jobs=-1)
         if hasattr(self,"save_result_worker_thread"):
+            #queue the worker to 
             #read in all files and begin processing them
             filenames=os.listdir(self.args.get("output_dir","./results"))
             version="_".join([str(val) for val in self.args.values()])
@@ -981,8 +982,8 @@ class myLightningModule(LightningModule):
         threshold=1000
         #if we're in debug mode set threshold to 8
         if self.args.get("debug",False):
-            threshold=8
-
+            threshold = self.args.get(int("test_batch_size"/2),8)
+        abortcount=0
         while True:
             for dataset_idx in range(self.test_data_loader_count):
                 filename="results_{}_{}_pt.npz".format(version,dataset_idx)
@@ -1009,5 +1010,12 @@ class myLightningModule(LightningModule):
                     self.test_attackedresults[dataset_idx]=self.test_attackedresults[dataset_idx][threshold:]
                     dirtyidx+=1
             if len(self.test_cleanresults[dataset_idx])<threshold and len(self.test_attackedresults[dataset_idx]) <threshold:
-                time.sleep(10)#sleep for 10 seconds before checking again, because we know it wont grow that much in that time.
+                #ready to exit
+                if abort>self.data_loader_count*2:
+                    break
+                else:
+                    abort+=1
+                    threshold=min([len(self.test_attackedresults[idx]) for idx in range(self.test_data_loader_count)]+[len(self.test_cleanresults[idx]) for idx in range(self.test_data_loader_count)])
+            else:
+                threshold=self.args.get(int("test_batch_size"/2),8)
             
