@@ -876,7 +876,7 @@ class myLightningModule(LightningModule):
             #read in all files and begin processing them
             filenames=os.listdir(self.args.get("output_dir","./results"))
             print(filenames)
-            version="_".join([str(val) for val in self.args.values()])
+            version=self.version
             dirtyfilenames=filter(lambda x: x.startswith("dirtyresults_{}".format(version)),filenames)
             cleanfilenames=filter(lambda x: x.startswith("cleanresults_{}".format(version)),filenames)
             patience=0
@@ -992,7 +992,7 @@ class myLightningModule(LightningModule):
         path=os.path.join(self.args.get("output_dir","./results"))
         os.makedirs(path,exist_ok=True)
         #set version as a string of all the args
-        version="_".join([str(val) for val in self.args.values()])
+        version=self.version
         threshold=10
         #if we're in debug mode set threshold to 8
         if self.args.get("debug",False):
