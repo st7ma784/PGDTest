@@ -1009,6 +1009,7 @@ class myLightningModule(LightningModule):
                     logits=torch.cat([val["logits"] for val in clean_results],dim=0).cpu().numpy()
                     labels=torch.cat([val["textlabels"] for val in clean_results],dim=0).cpu().numpy()
                     np.savez(cleanPath,logits=logits,labels=labels)
+                    print("Saved clean results to {}".format(cleanPath))
                     self.test_cleanresults[dataset_idx]=self.test_cleanresults[dataset_idx][threshold:]
                     cleanidx+=1
                 if len(self.test_attackedresults[dataset_idx]) > threshold:
@@ -1021,6 +1022,7 @@ class myLightningModule(LightningModule):
                     test_epsilons=self.test_epsilons.cpu().numpy()
                     test_numsteps=self.test_numsteps.cpu().numpy()
                     np.savez(dirtyPath,logits=logits,labels=labels,alphas=test_alphas,epsilons=test_epsilons,numsteps=test_numsteps)
+                    print("Saved dirty results to {}".format(dirtyPath))
                     self.test_attackedresults[dataset_idx]=self.test_attackedresults[dataset_idx][threshold:]
                     dirtyidx+=1
                 print("Saved results for dataset {}".format(dataset_idx))
