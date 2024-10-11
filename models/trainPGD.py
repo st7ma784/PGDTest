@@ -1001,7 +1001,6 @@ class myLightningModule(LightningModule):
         threshold=10
         #if we're in debug mode set threshold to 8
     
-        abortcount=0
         while True:
             for dataset_idx in range(self.test_data_loader_count):
                 # print("Saving results for dataset {}".format(dataset_idx))
