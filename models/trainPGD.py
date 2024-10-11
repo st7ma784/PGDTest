@@ -926,9 +926,12 @@ class myLightningModule(LightningModule):
                         alphas=data["alphas"]
                         epsilons=data["epsilons"]
                         steps=data["numsteps"]
-                        #zip the datas together
-                        for alpha,epsilon,step in zip(alphas,epsilons,steps):
-                            key=(alpha,epsilon,step)
+                        #stack the data
+                        keys=np.stack([alphas,epsilons,steps],axis=0)
+                        #find unique keys
+                        unique_keys=np.unique(keys,axis=0)
+                        for key in unique_keys:
+                            key=tuple(key)
                             # print("Key is ",key)
                             if file not in alpha_eps_step_dict[key]:
                                 alpha_eps_step_dict[key].append(file)
