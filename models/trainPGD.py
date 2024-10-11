@@ -889,7 +889,9 @@ class myLightningModule(LightningModule):
 
                 clean_files=list(filter(lambda x: str("_{}_pt".format(dataset_idx)) in x,cleanfilenames))
                 dirty_files=list(filter(lambda x: str("_{}_pt".format(dataset_idx)) in x,dirtyfilenames))
-                
+                if len(clean_files) == 0 or len(dirty_files) == 0:
+                    print("No results for dataset {}".format(dataset_idx))
+                    continue
 
                 GoodLabels=[]
                 GoodLogits=[]
