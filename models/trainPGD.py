@@ -979,17 +979,17 @@ class myLightningModule(LightningModule):
         while True:
             for dataset_idx in range(self.test_data_loader_count):
                 filename="results_{}_{}_pt.npz".format(version,dataset_idx)
-                if len(self.test_cleanresults[self.dataset_idx]) > 1000:
+                if len(self.test_cleanresults[dataset_idx]) > 1000:
                         #take the first 1000 results and save them to disk.
                     clean_filename="clean"+filename+str(cleanidx)
                     cleanPath=os.path.join(path,clean_filename)
-                    clean_results=self.test_cleanresults[self.dataset_idx][:1000]
+                    clean_results=self.test_cleanresults[dataset_idx][:1000]
                     logits=torch.cat([val["logits"] for val in clean_results],dim=0).cpu().numpy()
                     labels=torch.cat([val["textlabels"] for val in clean_results],dim=0).cpu().numpy()
                     np.savez(cleanPath,logits=logits,labels=labels)
-                    self.test_cleanresults[self.dataset_idx]=self.test_cleanresults[self.dataset_idx][1000:]
+                    self.test_cleanresults[dataset_idx]=self.test_cleanresults[dataset_idx][1000:]
                     cleanidx+=1
-                if len(self.test_attackedresults[self.dataset_idx]) > 1000:
+                if len(self.test_attackedresults[dataset_idx]) > 1000:
                     dirty_filename="dirty"+filename+str(dirtyidx)
                     dirtyPath=os.path.join(path,dirty_filename)
                     dirty_results=self.test_attackedresults[self.dataset_idx][:1000]
@@ -999,7 +999,7 @@ class myLightningModule(LightningModule):
                     test_epsilons=self.test_epsilons.cpu().numpy()
                     test_numsteps=self.test_numsteps.cpu().numpy()
                     np.savez(dirtyPath,logits=logits,labels=labels,alphas=test_alphas,epsilons=test_epsilons,numsteps=test_numsteps)
-                    self.test_attackedresults[self.dataset_idx]=self.test_attackedresults[self.dataset_idx][1000:]
+                    self.test_attackedresults[dataset_idx]=self.test_attackedresults[dataset_idx][1000:]
                     dirtyidx+=1
             time.sleep(10)#sleep for 10 seconds before checking again, because we know it wont grow that much in that time.
             
