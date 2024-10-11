@@ -1004,7 +1004,7 @@ class myLightningModule(LightningModule):
         while True:
             for dataset_idx in range(self.test_data_loader_count):
                 # print("Saving results for dataset {}".format(dataset_idx))
-                filename="results_{}_{}_pt.npz".format(version,dataset_idx)
+                filename="results_{}_{}_pt".format(version,dataset_idx)
                 if not self.test_cleanresults[dataset_idx].empty():
                         #take the first 1000 results and save them to disk.
                     #take first n results and save them to disk, remove them from the list
