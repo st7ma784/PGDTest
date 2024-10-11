@@ -819,7 +819,7 @@ class myLightningModule(LightningModule):
         scale_text_embed_norm = scale_text_embed / scale_text_embed.norm(dim=-1, keepdim=True)
         output_prompt = img_embed_norm @ scale_text_embed_norm.t()        
 
-        self.test_cleanresults[dataloader_idx].append({"logits":img_embed.detach(), "textlabels":target}) #using target like this is fine because each dataloader is tested and logged independently.
+        self.test_cleanresults[dataloader_idx].put({"logits":img_embed.detach(), "textlabels":target}) #using target like this is fine because each dataloader is tested and logged independently.
         loss = self.criterion(output_prompt, torch.arange(images.size(0), device=self.device))
 
         # measure accuracy and record loss
@@ -854,7 +854,9 @@ class myLightningModule(LightningModule):
                         self.log(f'test_dirty_batch_acc_alpha_{self.test_alphas[alpha]}_epsilon_{self.test_epsilons[epsilon]}_numsteps_{Attack_step}', acc1[0].item(), on_step=True, on_epoch=True, prog_bar=True, logger=True)
                         results_data.append({"logits": img_embed_dirty[alpha,epsilon], "textlabels": target, "alpha": self.test_alphas[alpha], "epsilon": self.test_epsilons[epsilon], "step": Attack_step})
                     
-        self.test_attackedresults[dataloader_idx].extend(results_data)
+        for i in results_data:
+            self.test_attackedresults[dataloader_idx].put(i)
+        
        
         return loss
                     
