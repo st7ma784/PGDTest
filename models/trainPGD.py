@@ -1007,8 +1007,8 @@ class myLightningModule(LightningModule):
                     cleanPath=os.path.join(path,clean_filename)
                     clean_results=self.test_cleanresults[dataset_idx][:threshold]
                     print("Saving clean results {} to {}".format(len(clean_results),cleanPath))
-                    logits=torch.cat([val["logits"] for val in clean_results],dim=0).cpu().numpy() if threshold > 1 else clean_results["logits"].cpu().numpy()
-                    labels=torch.cat([val["textlabels"] for val in clean_results],dim=0).cpu().numpy() if threshold > 1 else clean_results["textlabels"].cpu().numpy()
+                    logits=torch.cat([val["logits"] for val in clean_results],dim=0).cpu().numpy() if threshold > 1 else clean_results[0]["logits"].cpu().numpy()
+                    labels=torch.cat([val["textlabels"] for val in clean_results],dim=0).cpu().numpy() if threshold > 1 else clean_results[0]["textlabels"].cpu().numpy()
                     np.savez(cleanPath,logits=logits,labels=labels)
                     print("Saved clean results to {}".format(cleanPath))
                     self.test_cleanresults[dataset_idx]=self.test_cleanresults[dataset_idx][threshold:]
@@ -1018,8 +1018,8 @@ class myLightningModule(LightningModule):
                     dirtyPath=os.path.join(path,dirty_filename)
                     dirty_results=self.test_attackedresults[self.dataset_idx][:threshold]
                     print("Saving dirty results {} to {}".format(len(dirty_results),dirtyPath))
-                    logits=torch.cat([val["logits"] for val in dirty_results],dim=0).cpu().numpy() if threshold > 1 else dirty_results["logits"].cpu().numpy()
-                    labels=torch.cat([val["textlabels"] for val in dirty_results],dim=0).cpu().numpy() if threshold > 1 else dirty_results["textlabels"].cpu().numpy()
+                    logits=torch.cat([val["logits"] for val in dirty_results],dim=0).cpu().numpy() if threshold > 1 else dirty_results[0]["logits"].cpu().numpy()
+                    labels=torch.cat([val["textlabels"] for val in dirty_results],dim=0).cpu().numpy() if threshold > 1 else dirty_results[0]["textlabels"].cpu().numpy()
                     test_alphas=self.test_alphas.cpu().numpy()
                     test_epsilons=self.test_epsilons.cpu().numpy()
                     test_numsteps=self.test_numsteps.cpu().numpy()
