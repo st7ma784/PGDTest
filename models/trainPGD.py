@@ -896,9 +896,6 @@ class myLightningModule(LightningModule):
                 GoodLabels=[]
                 GoodLogits=[]
                 for file in list(clean_files):#
-                    time.sleep(1)
-                    print("here")
-                    print("Processing file: ",os.path.join(path,file))
                     if not os.path.exists(os.path.join(path,file)):
                         print("File {} does not exist".format(file))
                         continue
@@ -921,24 +918,21 @@ class myLightningModule(LightningModule):
                 BadLogits=[]
                 alpha_eps_step_dict = defaultdict(list)
                 for file in list(dirty_files):
-                    time.sleep(1)
-                    print("here")
-                    print("Processing file: ",os.path.join(path,file))
                     if not os.path.exists(os.path.join(path,file)):
                         print("File {} does not exist".format(file))
                         continue
                     
                     with open(os.path.join(path,file), 'rb') as f:
                         data = np.load(f, allow_pickle=True)
-                    
-                        print(data)
                         alphas=data["alphas"]
                         epsilons=data["epsilons"]
                         steps=data["numsteps"]
                         #zip the datas together
                         for alpha,epsilon,step in zip(alphas,epsilons,steps):
                             key=(alpha,epsilon,step)
+                            print("Key is ",key)
                             alpha_eps_step_dict[key].append(file)
+                            #we do this so we can run one test at a time and not store all the data in memory
                     #delete the file
 
                 for key, val in alpha_eps_step_dict.items():
@@ -949,10 +943,13 @@ class myLightningModule(LightningModule):
                         with open(os.path.join(path,file), 'rb') as f:
                             data = np.load(f, allow_pickle=True)
                             logits,labels=data["logits"],data["labels"]
-                            alphas=data["alphas"]==a
-                            epsilons=data["epsilons"]==e
-                            steps=data["numsteps"]==s
-                            mask=alphas & epsilons & steps
+                            alphas= a==data["alphas"]
+                            epsilons= e==data["epsilons"]
+                            steps= s==data["numsteps"]
+                            #mask the data
+
+                            mask= alphas & epsilons & steps
+
                             BadLabels.append(labels[mask])
                             BadLogits.append(logits[mask])
                             
@@ -1036,6 +1033,7 @@ class myLightningModule(LightningModule):
         #if we're in debug mode set threshold to 8
     
         while True:
+            time.sleep(1)
             for dataset_idx in range(self.test_data_loader_count):
                 # print("Saving results for dataset {}".format(dataset_idx))
                 filename="results_{}_{}_pt".format(version,dataset_idx)
