@@ -884,20 +884,23 @@ class myLightningModule(LightningModule):
             version=self.version
             dirtyfilenames=filter(lambda x: x.startswith("dirtyresults_{}".format(version)),filenames)
             cleanfilenames=filter(lambda x: x.startswith("cleanresults_{}".format(version)),filenames)
-            print("CLEAN FILES: ",list(cleanfilenames), "\n\n")
-            print("DIRTY FILES: ",list(dirtyfilenames), "\n\n")
-          
 
             for dataset_idx in range(self.test_data_loader_count):
+
                 clean_files=filter(lambda x: str("_{}_pt".format(dataset_idx)) in x,cleanfilenames)
                 dirty_files=filter(lambda x: str("_{}_pt".format(dataset_idx)) in x,dirtyfilenames)
+                
+                print("CLEAN FILES for {} : {} ".format(dataset_idx,list(cleanfilenames)), "\n\n")
+                print("DIRTY FILES for {} : {} ".format(dataset_idx,list(dirtyfilenames)), "\n\n")
                 GoodLabels=[]
                 GoodLogits=[]
                 for file in clean_files:
+
                     data=np.load(os.path.join(path,file))
                     GoodLabels.append(data["labels"])
                     GoodLogits.append(data["logits"])
                     #delete the file
+                    print("Deleting file: ",os.path.join(path,file))
                     os.remove(os.path.join(path,file))
                 GoodLabels=np.concatenate(GoodLabels) if len(GoodLabels) > 1 else GoodLabels[0]
                 GoodLogits=np.concatenate(GoodLogits) if len(GoodLogits) > 1 else GoodLogits[0]
