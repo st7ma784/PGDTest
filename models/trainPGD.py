@@ -919,17 +919,42 @@ class myLightningModule(LightningModule):
                 BadLabels=[]
                 BadLogits=[]
                 alpha_eps_step_dict = defaultdict(list)
-                for file in dirty_files:
-                    alpha_eps_step_dict[(data["alphas"],data["epsilons"],data["numsteps"])].append(file)
+                for file in list(dirty_files):
+                    time.sleep(1)
+                    print("here")
+                    print("Processing file: ",os.path.join(path,file))
+                    if not os.path.exists(os.path.join(path,file)):
+                        print("File {} does not exist".format(file))
+                        continue
+                    
+                    with open(os.path.join(path,file), 'rb') as f:
+                        data = np.load(f, allow_pickle=True)
+                    
+                        print(data)
+                        alphas=data["alphas"]
+                        epsilons=data["epsilons"]
+                        steps=data["steps"]
+                        #zip the datas together
+                        for alpha,epsilon,step in zip(alphas,epsilons,steps):
+                            key=(alpha,epsilon,step)
+                            alpha_eps_step_dict[key].append(filenames)
+                    #delete the file
 
                 for key, val in alpha_eps_step_dict.items():
                     BadLabels=[]
                     BadLogits=[]
+                    a,e,s=key
                     for file in val:
-                        data=np.load(os.path.join(path,file))
-                        BadLabels.append(data["labels"])
-                        BadLogits.append(data["logits"])
-                                       
+                        with open(os.path.join(path,file), 'rb') as f:
+                            data = np.load(f, allow_pickle=True)
+                            logits,labels=data["logits"],data["labels"]
+                            alphas=data["alphas"]==a
+                            epsilons=data["epsilons"]==e
+                            steps=data["steps"]==s
+                            mask=alphas & epsilons & steps
+                            BadLabels.append(labels[mask])
+                            BadLogits.append(logits[mask])
+                            
                     BadLabels=np.concatenate(BadLabels) if len(BadLabels) > 1 else BadLabels[0]
                     BadLogits=np.concatenate(BadLogits) if len(BadLogits) > 1 else BadLogits[0]
                     self.Dirtyclassifier.fit(BadLogits, BadLabels)
@@ -1033,10 +1058,10 @@ class myLightningModule(LightningModule):
                     # print("Saving dirty results {} to {}".format(len(dirty_results),dirtyPath))
                     logits=torch.cat([val["logits"] for val in dirty_results],dim=0).cpu().numpy() if threshold > 1 else dirty_results[0]["logits"].cpu().numpy()
                     labels=torch.cat([val["textlabels"] for val in dirty_results],dim=0).cpu().numpy() if threshold > 1 else dirty_results[0]["textlabels"].cpu().numpy()
-                    test_alphas=self.test_alphas.cpu().numpy()
-                    test_epsilons=self.test_epsilons.cpu().numpy()
-                    test_numsteps=self.test_numsteps.cpu().numpy()
-                    np.savez(dirtyPath,logits=logits,labels=labels,alphas=test_alphas,epsilons=test_epsilons,numsteps=test_numsteps)
+                    alpha=torch.cat([val["alpha"] for val in dirty_results],dim=0).cpu().numpy() if threshold > 1 else dirty_results[0]["alpha"].cpu().numpy()
+                    epsilons=torch.cat([val["epsilon"] for val in dirty_results],dim=0).cpu().numpy() if threshold > 1 else dirty_results[0]["epsilon"].cpu().numpy()
+                    numsteps=torch.cat([val["step"] for val in dirty_results],dim=0).cpu().numpy() if threshold > 1 else dirty_results[0]["step"].cpu().numpy()
+                    np.savez(dirtyPath,logits=logits,labels=labels,alphas=alpha,epsilons=epsilons,numsteps=numsteps)
                     # print("Saved dirty results to {}".format(dirtyPath))
                     dirtyidx+=1
                 # print("Saved results for dataset {}".format(dataset_idx))
