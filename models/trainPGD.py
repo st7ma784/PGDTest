@@ -924,9 +924,9 @@ class myLightningModule(LightningModule):
                         epsilons=data["epsilons"]
                         steps=data["numsteps"]
                         #stack the data
-                        keys=np.stack([alphas,epsilons,steps],axis=0)
+                        keys=np.stack([alphas,epsilons,steps],axis=1)
                         #find unique keys
-                        unique_keys=np.unique(keys,axis=1)
+                        unique_keys=np.unique(keys,axis=0)
                         for key in unique_keys:
                             print("Key is ",key)
                             key=tuple(key)
@@ -1029,7 +1029,6 @@ class myLightningModule(LightningModule):
         #set version as a string of all the args
         version=self.version
         threshold=10
-        #if we're in debug mode set threshold to 8
     
         while True:
             time.sleep(1)
