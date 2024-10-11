@@ -853,7 +853,7 @@ class myLightningModule(LightningModule):
                         self.log(f'test_dirty_batch_loss_alpha_{self.test_alphas[alpha]}_epsilon_{self.test_epsilons[epsilon]}_numsteps_{Attack_step}', loss[alpha,epsilon].mean(), on_step=True, on_epoch=True, prog_bar=True, logger=True)
                         acc1 = accuracy(output_prompt_adv[alpha,epsilon], torch.arange(images.size(0),device=images.device), topk=(1,))
                         self.log(f'test_dirty_batch_acc_alpha_{self.test_alphas[alpha]}_epsilon_{self.test_epsilons[epsilon]}_numsteps_{Attack_step}', acc1[0].item(), on_step=True, on_epoch=True, prog_bar=True, logger=True)
-                        self.test_attackedresults[dataloader_idx].put({"logits": img_embed_dirty[alpha,epsilon], "textlabels": target, "alpha": self.test_alphas[alpha], "epsilon": self.test_epsilons[epsilon], "step": Attack_step})
+                        self.test_attackedresults[dataloader_idx].put({"logits": img_embed_dirty[alpha,epsilon], "textlabels": target, "alpha": self.test_alphas[alpha].repeat(target.shape[0]), "epsilon": self.test_epsilons[epsilon].repeat(target.shape[0]), "step": Attack_step.repeat(target.shape[0])})  
         
        
         return loss
@@ -930,7 +930,7 @@ class myLightningModule(LightningModule):
                         #zip the datas together
                         for alpha,epsilon,step in zip(alphas,epsilons,steps):
                             key=(alpha,epsilon,step)
-                            print("Key is ",key)
+                            # print("Key is ",key)
                             alpha_eps_step_dict[key].append(file)
                             #we do this so we can run one test at a time and not store all the data in memory
                     #delete the file
@@ -944,15 +944,15 @@ class myLightningModule(LightningModule):
                             data = np.load(f, allow_pickle=True)
                             logits,labels=data["logits"],data["labels"]
                             
-                            alphas= a==data["alphas"]
-                            epsilons= e==data["epsilons"]
-                            steps= s==data["numsteps"]
+                            alphas= data["alphas"]
+                            epsilons= data["epsilons"]
+                            steps= data["numsteps"]
                             #mask the data
                             print("Alphas: ",alphas)
                             print("Epsilons: ",epsilons)
                             print("Steps: ",steps)
 
-                            mask= alphas & epsilons & steps
+                            mask= alphas==a & epsilons==e & steps==s
 
                             BadLabels.append(labels[mask])
                             BadLogits.append(logits[mask])
