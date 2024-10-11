@@ -195,7 +195,7 @@ class MyDataModule(pl.LightningDataModule):
             print("Debugging")
             print(" ---------------------------------------DEBUGGING---------------------------------------")
 
-            self.val_dataset_names = ['cifar10']
+            self.val_dataset_names = ['cifar10','cifar100']
             self.train_dataset_names = ['cifar10']
 
         self.template = 'This is a photo of a {}'

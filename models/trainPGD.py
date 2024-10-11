@@ -3,7 +3,7 @@
 from pytorch_lightning import LightningModule
 import torch.nn as nn
 import torch
-
+import os
 from utils import cosine_lr
 from utils import one_hot_embedding
 from utils import accuracy,clamp,normalize
@@ -16,7 +16,8 @@ from sklearn.linear_model import LogisticRegression
 import numpy as np
 #get default dict for logging
 from collections import defaultdict
-
+import threading
+import time
 def multiGPU_CLIP(model, images, text_tokens):
    
     #images shape is (batch, 3, 224, 224)
@@ -579,8 +580,8 @@ class myLightningModule(LightningModule):
                   "weight_decay":self.args.get("weight_decay",0.0001)})
         elif self.args.get("optimizer","sgd") == "sgd":
             optimizer_fn=torch.optim.SGD
-            # args.update({"momentum":self.args.get("momentum",0.9),
-            #       "weight_decay":self.args.get("weight_decay",0.0001)})
+            args.update({"momentum":self.args.get("momentum",0.9),
+                  "weight_decay":self.args.get("weight_decay",0.0001)})
 
         elif self.args.get("optimizer","sgd") == "adam":
             optimizer_fn=torch.optim.Adam
@@ -601,12 +602,6 @@ class myLightningModule(LightningModule):
                                         **args)
         #scheduler = cosine_lr(optimizer, self.args.get("learning_rate",1e-5), self.args.get("warmup",1000), self.args.get("total_steps",100000))
         return optimizer#([optimizer],[scheduler])
-
-
-
-
-
-
 
 
     def init_batch_uniform(self, X,eps):
@@ -652,36 +647,19 @@ class myLightningModule(LightningModule):
         X=X.clone().detach()
         text_tokens=text_tokens.clone().detach()
         for iter_count in range(max(attack_iters)):
-            # print(iter_count)
             new_images = torch.add(X, delta)
-            # print(new_images.shape)
-            # print("requires grad on new_images? {}".format(new_images.requires_grad))
-
             prompted_images = torch.div(torch.sub(new_images, self.mu_img.clone()), self.std_img.clone()) #normalize(new_images) but preserves grad
-            # print("requires grad on prompted_images? {}".format(prompted_images.requires_grad))
 
             img_embed=self.model.encode_image(prompted_images.flatten(0,-4))
-            # print(img_embed.shape)
-            # print("requires grad on img_embed? {} shape : {}".format(img_embed.requires_grad,img_embed.shape))
             img_embed = img_embed / img_embed.norm(dim=-1, keepdim=True)
-            # print("requires grad on img_embed? {} shape : {}".format(img_embed.requires_grad,img_embed.shape))
-
             scale_text_embed=self.model.encode_text(text_tokens)
-            # print("requires grad on scale_text_embed? {} shape : {}".format(scale_text_embed.requires_grad,scale_text_embed.shape))
-
             scale_text_embed = scale_text_embed / scale_text_embed.norm(dim=-1, keepdim=True)
             # print("requires grad on scale_text_embed? {} shape : {}".format(scale_text_embed.requires_grad,scale_text_embed.shape))
 
             output = img_embed @ scale_text_embed.t()
-            # print("requires grad on output? {} shape : {}".format(output.requires_grad,output.shape))
-
-            #unflatten the output into alpha,epsilon,B
             output = output.view(alpha.size(0),epsilon.size(0),X.size(0),-1)
-            # print("requires grad on output? {} shape : {}".format(output.requires_grad,output.shape))
             loss = self.criterion(output.permute(-2,-1,0,1), torch.arange(X.shape[0], device=self.device).unsqueeze(-1).unsqueeze(-1).repeat(1,alpha.size(0),epsilon.size(0)))
             loss.backward()
-            # losses.append(loss.item())
-            #delta.retain_grad()
             grad = delta.grad.detach()
             d = delta[:, :, :, :,:,:]
             g = grad[:, :, :, :,:,:]
@@ -691,13 +669,112 @@ class myLightningModule(LightningModule):
             delta.data[:, :, :, :,:,:] = d
             delta.grad.zero_()
             if iter_count+1 in attack_iters:
-                #log the X+delta and the text tokens
                 return_dict.update({iter_count:(X+delta,text_tokens)})
-                        
-        #self.log("mean_attack_losses",sum(losses)/len(losses))
-        #self.log("max_attack_loss",max(losses))
-        #self.log("min_attack_loss",min(losses))
         return return_dict
+    
+    @torch.enable_grad()
+    @torch.inference_mode(False)
+    def attack_batch_CW(self, X, target, text_tokens,alpha, attack_iters,epsilon, restarts=1, early_stop=True):
+        delta=self.init_batch_delta(X,epsilon).unsqueeze(0).repeat(alpha.shape[0],1,1,1,1,1)#make epsilon stacks of delta and repeat for each alpha so we have shape alpha,epsilon,B,3,224,224
+        delta.retain_grad()
+        return_dict={}
+        X=X.clone().detach()
+        text_tokens=text_tokens.clone().detach()
+        for iter_count in range(max(attack_iters)):
+            new_images = torch.add(X, delta)
+            prompted_images = torch.div(torch.sub(new_images, self.mu_img.clone()), self.std_img.clone())
+            # prompt_token = self.add_prompter()
+            img_embed=self.model.encode_image(prompted_images.flatten(0,-4))
+            img_embed = img_embed / img_embed.norm(dim=-1, keepdim=True)
+            scale_text_embed=self.model.encode_text(text_tokens)
+            scale_text_embed = scale_text_embed / scale_text_embed.norm(dim=-1, keepdim=True)
+            # print("requires grad on scale_text_embed? {} shape : {}".format(scale_text_embed.requires_grad,scale_text_embed.shape))
+
+            output = img_embed @ scale_text_embed.t()
+            output = output.view(alpha.size(0),epsilon.size(0),X.size(0),-1)
+            label_mask = one_hot_embedding(torch.arange(X.shape(0),device=X.device), output.size(1)).unsqueeze(0).unsqueeze(0).repeat(alpha.size(0),epsilon.size(0),1,1)
+            correct_logit = torch.sum(label_mask * output, dim=1)
+            wrong_logit, _ = torch.max((1 - label_mask) * output - 1e4 * label_mask, axis=1)
+            loss = - torch.sum(torch.sum(F.relu(correct_logit - wrong_logit + 50),dim=-1),dim=-1)
+            loss.backward()
+            grad = delta.grad.detach()
+            d = delta[:, :, :, :,:,:]
+            g = grad[:, :, :, :,:,:]
+            x = X[:, :, :, :]
+            d=self.batch_clamp(d,alpha,g,epsilon)
+            d = clamp(d, self.lower_limit - x, self.upper_limit - x)
+            delta.data[:, :, :, :,:,:] = d
+            delta.grad.zero_()
+            if iter_count+1 in attack_iters:
+                return_dict.update({iter_count:(X+delta,text_tokens)})
+        return return_dict
+    
+    @torch.enable_grad()
+    @torch.inference_mode(False)
+    def attack_batch_text_pgd(self, X, target, text_tokens,alpha, attack_iters,epsilon, restarts=1, early_stop=True):
+
+        delta=self.init_batch_delta(text_tokens,epsilon).unsqueeze(0).repeat(alpha.shape[0],1,1,1)#make epsilon stacks of delta and repeat for each alpha so we have shape alpha,epsilon,B,77
+        #instead we should use the hidden shape after the clip token emb, and then return this to the original shape later. 
+        self.insert_text_model_hook()
+        self.model.encode_text(text_tokens) #do this with hooks 
+        clean_features=self.test_text_features
+        for _ in range(attack_iters):
+
+            #step 1: modify text tokens
+            #step 2: pass through CLIP model module that saves features,
+            #step 3: Loss= cosine similarity of clean features to dirty features. 
+            #step 4: now consider loss. 
+            text_tokens+=delta
+            
+
+
+            img_embed=self.model.encode_image(X)
+            #ensure self.model has text hooks 
+            self.insert_text_model_hook()
+            scale_text_embed=self.model.encode_text(text_tokens)
+            features=self.test_text_features
+            #do Loss between each layer
+            text_loss=torch.zeros((X.shape[0],X.shape[0]),device=self.device)
+            for layer in features.keys():
+                itemA=features[layer]
+                itemB=clean_features[layer]
+                itemA=itemA/itemA.norm(dim=-1, keepdim=True)
+                itemB=itemB/itemB.norm(dim=-1, keepdim=True)
+                similarities= itemA@itemB.T  # should be B,B in shape, 
+                text_loss+=self.CETextLoss(similarities)
+            self.log("text_loss",text_loss)
+
+            #step 5: backpropagate, making noise closer to clean features
+            text_loss.backward()
+            #step 6: remove hooks and zero grad
+            self.remove_text_model_hook()
+            delta.grad.zero_()
+
+
+            #step 7: now do attack as normal
+            d = delta
+
+            #I want to find a way to maximize the loss while minimizing text loss
+
+            img_embed_norm = img_embed / img_embed.norm(dim=-1, keepdim=True)
+            scale_text_embed_norm = scale_text_embed / scale_text_embed.norm(dim=-1, keepdim=True)
+            logits_per_image = img_embed_norm @ scale_text_embed_norm.t()
+            logits_per_text = scale_text_embed_norm @ img_embed_norm.t()
+            # logits_per_text, img_embed, scale_text_embed
+
+
+            loss = self.criterion(logits_per_text, torch.arange(X.size(0), device=self.device))
+            loss.backward()
+            self.log("attack_loss",loss)
+            grad = delta.grad.detach()
+            d = delta[:, :, :, :]
+            g = grad[:, :, :, :]
+            x = X[:, :, :, :]
+            d=self.clamp(d,alpha,g,epsilon)
+            d = clamp(d, self.lower_limit - x, self.upper_limit - x)
+            delta.data[:, :, :, :] = d
+            delta.grad.zero_()
+        return X,text_tokens+delta
     
     def on_test_epoch_start(self):
         self.mu_img = torch.tensor((0.485, 0.456, 0.406)).view(3,1,1).to(self.device)
@@ -725,14 +802,12 @@ class myLightningModule(LightningModule):
         self.test_alphas = torch.tensor([1/255, 2/255, 4/255])
         self.test_epsilons = torch.tensor([1/255, 2/255, 4/255])
         self.test_numsteps = torch.tensor([5, 10])
-
+        #instead of saving the results to memory, were going to save them to disk.
+        self.save_result_worker_thread=threading.Thread(target=self.save_result_worker)
+        self.save_result_worker_thread.start()
 
     def test_step(self, batch, batch_idx,  dataloader_idx=0, *args, **kwargs):
         images, target,text = batch
-       
-        # alphas = np.array([1/255, 2/255, 4/255])
-        # epsilons = np.array([1/255, 2/255, 4/255])
-        # test_numsteps = np.array([5, 10])
         text=text.squeeze(1)
         img_embed=self.model.encode_image(images)
         scale_text_embed=self.model.encode_text(text)
@@ -794,35 +869,137 @@ class myLightningModule(LightningModule):
             self.Dirtyclassifier = LogisticRegression(random_state=0, C=0.316, max_iter=100, verbose=0, n_jobs=-1)
         if not hasattr(self,"generalclassifier"):
             self.generalclassifier = LogisticRegression(random_state=0, C=0.316, max_iter=100, verbose=0, n_jobs=-1)
+        if hasattr(self,"save_result_worker_thread"):
+            #read in all files and begin processing them
+            filenames=os.listdir(self.args.get("output_dir","./results"))
+            version="_".join([str(val) for val in self.args.values()])
+            dirtyfilenames=filter(lambda x: x.startswith("dirtyresults_{}".format(version)),filenames)
+            cleanfilenames=filter(lambda x: x.startswith("cleanresults_{}".format(version)),filenames)
+            for dataset_idx in self.test_data_loader_count:
+                clean_files=filter(lambda x: x.endswith(".npz") and x.startswith("cleanresults_{}_{}".format(version,dataset_idx)),cleanfilenames)
+                dirty_files=filter(lambda x: x.endswith(".npz") and x.startswith("dirtyresults_{}_{}".format(version,dataset_idx)),dirtyfilenames)
+                GoodLabels=[]
+                GoodLogits=[]
+                for file in clean_files:
+                    data=np.load(file)
+                    GoodLabels.append(data["labels"])
+                    GoodLogits.append(data["logits"])
+                GoodLabels=np.concatenate(GoodLabels)
+                GoodLogits=np.concatenate(GoodLogits)
+                self.Cleanclassifier.fit(GoodLogits, GoodLabels)
+                cleanscore=self.Cleanclassifier.score(GoodLogits, GoodLabels)
+                BadLabels=[]
+                BadLogits=[]
+                alpha_eps_step_dict = defaultdict(list)
+                for file in dirty_files:
+                    alpha_eps_step_dict[(data["alpha"],data["epsilon"],data["step"])].append(file)
+
+                for key, val in alpha_eps_step_dict.items():
+                    BadLabels=[]
+                    BadLogits=[]
+                    for file in val:
+                        data=np.load(file)
+                        BadLabels.append(data["labels"])
+                        BadLogits.append(data["logits"])                   
+                    BadLabels=np.concatenate(BadLabels)
+                    BadLogits=np.concatenate(BadLogits)
+                    self.Dirtyclassifier.fit(BadLogits, BadLabels)
+                    self.generalclassifier.fit(np.concatenate([GoodLogits,BadLogits]), np.concatenate([GoodLabels,BadLabels]))
+                    self.log( "Test Clean Classifier on Dirty Features on dataset {} alpha {} epsilon {} step {}".format(dataset_idx,key[0],key[1],key[2]),self.Cleanclassifier.score(BadLogits, BadLabels))
+                    self.log( "Test Dirty Classifier on Clean Features on dataset {} alpha {} epsilon {} step {}".format(dataset_idx,key[0],key[1],key[2]),self.Dirtyclassifier.score(GoodLogits, GoodLabels))
+                    self.log( "Test Clean Classifier on Clean Features on dataset {} alpha {} epsilon {} step {}".format(dataset_idx,key[0],key[1],key[2]),cleanscore)
+                    self.log( "Test Dirty Classifier on Dirty Features on dataset {} alpha {} epsilon {} step {}".format(dataset_idx,key[0],key[1],key[2]),self.Dirtyclassifier.score(BadLogits, BadLabels))
+                    self.log( "Test General Classifier on Dirty Features on dataset {} alpha {} epsilon {} step {}".format(dataset_idx,key[0],key[1],key[2]),self.generalclassifier.score(BadLogits, BadLabels))
+                    self.log( "Test General Classifier on Clean Features on dataset {} alpha {} epsilon {} step {}".format(dataset_idx,key[0],key[1],key[2]),self.generalclassifier.score(GoodLogits, GoodLabels))
+                    self.log( "Test General Classifier on All Features on dataset {} alpha {} epsilon {} step {}".format(dataset_idx,key[0],key[1],key[2]),self.generalclassifier.score(np.concatenate([GoodLogits,BadLogits]), np.concatenate([GoodLabels,BadLabels])))
+
+                    #delete the files
+                    for file in val:
+                        os.remove(file)
+                    
+
+        
 
 
-        for dataset_idx in range(self.test_data_loader_count):
-            #make the ground truth labels and logits
-            GoodLabels=torch.cat([val["textlabels"] for val in self.test_cleanresults[dataset_idx]],dim=0).cpu().numpy()
-            GoodLogits=torch.nan_to_num(torch.cat([val["logits"] for val in self.test_cleanresults[dataset_idx]],dim=0)).cpu().numpy()
-            self.Cleanclassifier.fit(GoodLogits, GoodLabels)
 
-            #now we need to sort the attacked results by alpha, epsilon, step
-            alpha_eps_step_dict = defaultdict(list)
-            for val in self.test_attackedresults[dataset_idx]:
-                alpha_eps_step_dict[(val["alpha"],val["epsilon"],val["step"])].append({"logits":val["logits"],"textlabels":val["textlabels"]})
-            for key, val in alpha_eps_step_dict.items():
-                BadLabels=torch.cat([v["textlabels"] for v in val],dim=0).cpu().numpy()
-                BadLogits=torch.nan_to_num(torch.cat([v["logits"] for v in val],dim=0)).cpu().numpy()
-                #check at least 2 classes are present in the dataset
-                if len(np.unique(GoodLabels)) < 2 or len(np.unique(BadLabels)) < 2:
-                    print("Not enough classes to run linear probes on dataset {}".format(dataset_idx))
-                    #skip this dataset
-                    continue
-                self.Dirtyclassifier.fit(BadLogits, BadLabels)
-                self.log( "Test Clean Classifier on Dirty Features on dataset {} alpha {} epsilon {} step {}".format(dataset_idx,key[0],key[1],key[2]),self.Cleanclassifier.score(BadLogits, BadLabels))
-                self.log( "Test Dirty Classifier on Clean Features on dataset {} alpha {} epsilon {} step {}".format(dataset_idx,key[0],key[1],key[2]),self.Dirtyclassifier.score(GoodLogits, GoodLabels))
-                self.log( "Test Clean Classifier on Clean Features on dataset {} alpha {} epsilon {} step {}".format(dataset_idx,key[0],key[1],key[2]),self.Cleanclassifier.score(GoodLogits, GoodLabels))
-                self.log( "Test Dirty Classifier on Dirty Features on dataset {} alpha {} epsilon {} step {}".format(dataset_idx,key[0],key[1],key[2]),self.Dirtyclassifier.score(BadLogits, BadLabels))
-                self.generalclassifier.fit(np.concatenate([GoodLogits,BadLogits]), np.concatenate([GoodLabels,BadLabels]))
-                self.log( "Test General Classifier on Dirty Features on dataset {} alpha {} epsilon {} step {}".format(dataset_idx,key[0],key[1],key[2]),self.generalclassifier.score(BadLogits, BadLabels))
-                self.log( "Test General Classifier on Clean Features on dataset {} alpha {} epsilon {} step {}".format(dataset_idx,key[0],key[1],key[2]),self.generalclassifier.score(GoodLogits, GoodLabels))
-                self.log( "Test General Classifier on All Features on dataset {} alpha {} epsilon {} step {}".format(dataset_idx,key[0],key[1],key[2]),self.generalclassifier.score(np.concatenate([GoodLogits,BadLogits]), np.concatenate([GoodLabels,BadLabels])))
-                
+
+
+
+
+
+
+
+
+        else:
+            for dataset_idx in range(self.test_data_loader_count):
+                #make the ground truth labels and logits
+                GoodLabels=torch.cat([val["textlabels"] for val in self.test_cleanresults[dataset_idx]],dim=0).cpu().numpy()
+                GoodLogits=torch.nan_to_num(torch.cat([val["logits"] for val in self.test_cleanresults[dataset_idx]],dim=0)).cpu().numpy()
+                self.Cleanclassifier.fit(GoodLogits, GoodLabels)
+
+                #now we need to sort the attacked results by alpha, epsilon, step
+                alpha_eps_step_dict = defaultdict(list)
+                for val in self.test_attackedresults[dataset_idx]:
+                    alpha_eps_step_dict[(val["alpha"],val["epsilon"],val["step"])].append({"logits":val["logits"],"textlabels":val["textlabels"]})
+                for key, val in alpha_eps_step_dict.items():
+                    BadLabels=torch.cat([v["textlabels"] for v in val],dim=0).cpu().numpy()
+                    BadLogits=torch.nan_to_num(torch.cat([v["logits"] for v in val],dim=0)).cpu().numpy()
+                    #check at least 2 classes are present in the dataset
+                    if len(np.unique(GoodLabels)) < 2 or len(np.unique(BadLabels)) < 2:
+                        print("Not enough classes to run linear probes on dataset {}".format(dataset_idx))
+                        #skip this dataset
+                        continue
+                    self.Dirtyclassifier.fit(BadLogits, BadLabels)
+                    self.log( "Test Clean Classifier on Dirty Features on dataset {} alpha {} epsilon {} step {}".format(dataset_idx,key[0],key[1],key[2]),self.Cleanclassifier.score(BadLogits, BadLabels))
+                    self.log( "Test Dirty Classifier on Clean Features on dataset {} alpha {} epsilon {} step {}".format(dataset_idx,key[0],key[1],key[2]),self.Dirtyclassifier.score(GoodLogits, GoodLabels))
+                    self.log( "Test Clean Classifier on Clean Features on dataset {} alpha {} epsilon {} step {}".format(dataset_idx,key[0],key[1],key[2]),self.Cleanclassifier.score(GoodLogits, GoodLabels))
+                    self.log( "Test Dirty Classifier on Dirty Features on dataset {} alpha {} epsilon {} step {}".format(dataset_idx,key[0],key[1],key[2]),self.Dirtyclassifier.score(BadLogits, BadLabels))
+                    self.generalclassifier.fit(np.concatenate([GoodLogits,BadLogits]), np.concatenate([GoodLabels,BadLabels]))
+                    self.log( "Test General Classifier on Dirty Features on dataset {} alpha {} epsilon {} step {}".format(dataset_idx,key[0],key[1],key[2]),self.generalclassifier.score(BadLogits, BadLabels))
+                    self.log( "Test General Classifier on Clean Features on dataset {} alpha {} epsilon {} step {}".format(dataset_idx,key[0],key[1],key[2]),self.generalclassifier.score(GoodLogits, GoodLabels))
+                    self.log( "Test General Classifier on All Features on dataset {} alpha {} epsilon {} step {}".format(dataset_idx,key[0],key[1],key[2]),self.generalclassifier.score(np.concatenate([GoodLogits,BadLogits]), np.concatenate([GoodLabels,BadLabels])))
+                    
         del self.test_cleanresults
         del self.test_attackedresults
+        if hasattr(self,"save_result_worker_thread"):
+            self.save_result_worker_thread.join()
+            del self.save_result_worker_thread
+
+    def save_result_worker(self):
+        #in this function, we will save the results to disk.
+        #we will constantly check self.test_cleanresults and self.test_attackedresults
+        #if there are results, we will save them with a filename thats unique to the run, and then has dataset_idx, alpha, epsilon, step 
+        #inside the file we'll save the first 1000 pairs of vectors and labels.
+        # the most efficient way to store tensors is to save them as numpy arrays, so we'll do that. 
+        cleanidx=0
+        dirtyidx=0
+        path=os.path.join(self.args.get("output_dir","./results"))
+        #set version as a string of all the args
+        version="_".join([str(val) for val in self.args.values()])
+        while True:
+            for dataset_idx in range(self.test_data_loader_count):
+                filename="results_{}_{}_pt.npz".format(version,dataset_idx)
+                if len(self.test_cleanresults[self.dataset_idx]) > 1000:
+                        #take the first 1000 results and save them to disk.
+                    clean_filename="clean"+filename+str(cleanidx)
+                    cleanPath=os.path.join(path,clean_filename)
+                    clean_results=self.test_cleanresults[self.dataset_idx][:1000]
+                    logits=torch.cat([val["logits"] for val in clean_results],dim=0).cpu().numpy()
+                    labels=torch.cat([val["textlabels"] for val in clean_results],dim=0).cpu().numpy()
+                    np.savez(cleanPath,logits=logits,labels=labels)
+                    self.test_cleanresults[self.dataset_idx]=self.test_cleanresults[self.dataset_idx][1000:]
+                    cleanidx+=1
+                if len(self.test_attackedresults[self.dataset_idx]) > 1000:
+                    dirty_filename="dirty"+filename+str(dirtyidx)
+                    dirtyPath=os.path.join(path,dirty_filename)
+                    dirty_results=self.test_attackedresults[self.dataset_idx][:1000]
+                    logits=torch.cat([val["logits"] for val in dirty_results],dim=0).cpu().numpy()
+                    labels=torch.cat([val["textlabels"] for val in dirty_results],dim=0).cpu().numpy()
+                    test_alphas=self.test_alphas.cpu().numpy()
+                    test_epsilons=self.test_epsilons.cpu().numpy()
+                    test_numsteps=self.test_numsteps.cpu().numpy()
+                    np.savez(dirtyPath,logits=logits,labels=labels,alphas=test_alphas,epsilons=test_epsilons,numsteps=test_numsteps)
+                    self.test_attackedresults[self.dataset_idx]=self.test_attackedresults[self.dataset_idx][1000:]
+                    dirtyidx+=1
+            time.sleep(10)#sleep for 10 seconds before checking again, because we know it wont grow that much in that time.
+            
