@@ -938,7 +938,7 @@ class myLightningModule(LightningModule):
                         #zip the datas together
                         for alpha,epsilon,step in zip(alphas,epsilons,steps):
                             key=(alpha,epsilon,step)
-                            alpha_eps_step_dict[key].append(filenames)
+                            alpha_eps_step_dict[key].append(file)
                     #delete the file
 
                 for key, val in alpha_eps_step_dict.items():
