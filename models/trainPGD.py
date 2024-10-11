@@ -899,10 +899,13 @@ class myLightningModule(LightningModule):
                         print("File {} does not exist".format(file))
                         continue
 
-                    data=np.load(os.path.join(path,file))
-                    print(data)
-                    GoodLabels.append(data["labels"])
-                    GoodLogits.append(data["logits"])
+                    #data=np.load(os.path.join(path,file))
+                    with open(os.path.join(path,file), 'rb') as f:
+                        data = np.load(f, allow_pickle=True)
+                    #
+                        print(data)
+                        GoodLabels.append(data["labels"])
+                        GoodLogits.append(data["logits"])
                     #delete the file
                     print("Deleting file: ",os.path.join(path,file))
                     os.remove(os.path.join(path,file))
