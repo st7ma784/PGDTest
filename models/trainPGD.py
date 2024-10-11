@@ -928,6 +928,7 @@ class myLightningModule(LightningModule):
                         #find unique keys
                         unique_keys=np.unique(keys,axis=0)
                         for key in unique_keys:
+                            print("Key is ",key)
                             key=tuple(key)
                             # print("Key is ",key)
                             if file not in alpha_eps_step_dict[key]:
