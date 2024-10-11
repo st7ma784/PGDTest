@@ -991,7 +991,7 @@ class myLightningModule(LightningModule):
         threshold=1000
         #if we're in debug mode set threshold to 8
         if self.args.get("debug",False):
-            threshold = self.args.get(int("test_batch_size"/2),8)
+            threshold = int(self.args.get("test_batch_size",8)/2)
         abortcount=0
         while True:
             for dataset_idx in range(self.test_data_loader_count):
