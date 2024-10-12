@@ -812,6 +812,9 @@ class myLightningModule(LightningModule):
         self.save_result_worker_thread=threading.Thread(target=self.save_result_worker)
         self.save_result_worker_thread.start()
 
+
+    @torch.enable_grad()
+    @torch.inference_mode(False)
     def test_step(self, batch, batch_idx,  dataloader_idx=0, *args, **kwargs):
         images, target,text = batch
         text=text.squeeze(1)
