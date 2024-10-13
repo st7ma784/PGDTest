@@ -786,7 +786,7 @@ class myLightningModule(LightningModule):
         self.test_epoch_end_called=False
         self.test_cleanresults=defaultdict(queue.Queue)
         self.test_attackedresults=defaultdict(queue.Queue)
-        self.test_data_loader_count = len(self.trainer.datamodule.val_dataloader())
+        self.test_data_loader_count = len(self.trainer.datamodule.test_dataloader())
         if self.args.get("test_attack_type","pgd")=="pgd":
             self.testattack=self.attack_batch_pgd
         elif self.args.get("test_attack_type","pgd")=="CW":
@@ -804,7 +804,7 @@ class myLightningModule(LightningModule):
         torch.set_grad_enabled(True)
 
         self.model_ori.eval()
-        self.test_alphas = torch.tensor([1/255, 2/255, 4/255],device=self.device)
+        self.test_alphas = torch.tensor([1/255, 2/255, 4/255,8/255],device=self.device)
         self.test_epsilons = torch.tensor([1/255, 2/255, 4/255],device=self.device)
         self.test_numsteps = torch.tensor([5, 10],device=self.device)
         #instead of saving the results to memory, were going to save them to disk.
