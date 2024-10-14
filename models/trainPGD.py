@@ -862,7 +862,7 @@ class myLightningModule(LightningModule):
                     
     
     
-       def on_test_epoch_end(self):
+    def on_test_epoch_end(self):
         self.test_epoch_end_called=True
 
 
@@ -894,7 +894,7 @@ class myLightningModule(LightningModule):
                 clean_files=list(filter(lambda x: int(x.split("_")[-2]) == dataset_idx,cleanfilenames))
                                         
                 dirty_files=list(filter(lambda x: int(x.split("_")[-2]) == dataset_idx,dirtyfilenames))
-#                dirty_files=list(filter(lambda x: str(dataset_idx)+"_pt" in x,list(dirtyfilenames)))
+    #                dirty_files=list(filter(lambda x: str(dataset_idx)+"_pt" in x,list(dirtyfilenames)))
                 if len(clean_files) == 0 or len(dirty_files) == 0:
                     print("No results for dataset {}".format(dataset_idx))
                     print("Clean files: ",clean_files)
@@ -1039,7 +1039,7 @@ class myLightningModule(LightningModule):
         #set version as a string of all the args
         version=self.version
         threshold=10
-    
+
         while True:
             time.sleep(1)
             for dataset_idx in range(self.test_data_loader_count):
