@@ -915,8 +915,7 @@ class myLightningModule(LightningModule):
                         GoodLabels.append(data["labels"])
                         GoodLogits.append(data["logits"])
                     #delete the file
-                    os.remove(os.path.join(path,file))
-                    time.sleep(1)
+
                 GoodLabels=np.concatenate(GoodLabels) if len(GoodLabels) > 1 else GoodLabels[0]
                 GoodLogits=np.concatenate(GoodLogits) if len(GoodLogits) > 1 else GoodLogits[0]
                 self.Cleanclassifier.fit(GoodLogits, GoodLabels)
@@ -978,18 +977,11 @@ class myLightningModule(LightningModule):
                     print("Deleting file: ",os.path.join(path,file))
                     os.remove(os.path.join(path,file))
                     time.sleep(1)
-
+                for file in list(clean_files):
+                    print("Deleting file: ",os.path.join(path,file))
+                    os.remove(os.path.join(path,file))
+                    time.sleep(1)
         
-
-
-
-
-
-
-
-
-
-
 
         # else:
         #     for dataset_idx in range(self.test_data_loader_count):
