@@ -817,7 +817,9 @@ class myLightningModule(LightningModule):
     # @torch.inference_mode(False)
     def test_step(self, batch, batch_idx,  dataloader_idx=0, *args, **kwargs):
         images, target,text = batch
-        text=text.squeeze(1)
+        text=text.clone().squeeze(1)
+        images=images.clone()
+        target=target.clone()
         img_embed=self.model.encode_image(images)
         scale_text_embed=self.model.encode_text(text)
         img_embed_norm = img_embed / img_embed.norm(dim=-1, keepdim=True)
