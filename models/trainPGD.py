@@ -883,6 +883,8 @@ class myLightningModule(LightningModule):
             #queue the worker to 
             #wait for the worker to finish
             self.save_result_worker_thread.join()
+
+            del self.save_result_worker_thread
             #read in all files and begin processing them
             path=self.args.get("output_dir","./results")
             filenames=os.listdir(path)
