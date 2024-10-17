@@ -8,6 +8,7 @@ import time
 import shutil
 import os
 import pickle
+import json
 import torch
 import numpy as np
 import torchvision.transforms as transforms
@@ -382,6 +383,10 @@ class MyDataModule(pl.LightningDataModule):
             self.train_dataset = torch.utils.data.ConcatDataset(self.train_datasets)
             # self.val_datasets = self.load_val_datasets()
             ##################validation datasets##################
+            
+            #savee the train dataset class names dict as JSON
+            with open(os.path.join(".","train_class_names.json"),'w') as f:
+                json.dump(self.train_text_names_dict,f)
             val_dataset_dict = {}
         
             if 'cifar10' in self.val_dataset_names:
