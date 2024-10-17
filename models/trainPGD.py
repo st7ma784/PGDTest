@@ -1031,14 +1031,17 @@ class myLightningModule(LightningModule):
         #set version as a string of all the args
         version=self.version
         threshold=10
-
-        while True:
+        EmptyCount=0
+        while EmptyCount < 3:
             time.sleep(1200)
+            clear=False
             for dataset_idx in range(self.test_data_loader_count):
                 # print("Saving results for dataset {}".format(dataset_idx))
                 filename="results_{}_{}_pt".format(version,dataset_idx)
+                clear=True
                 if not self.test_cleanresults[dataset_idx].empty():
-                        #take the first 1000 results and save them to disk.
+                    clear=False
+                    #take the first 1000 results and save them to disk.
                     #take first n results and save them to disk, remove them from the list
                     clean_results=[self.test_cleanresults[dataset_idx].get(False) for _ in range(min(self.test_cleanresults[dataset_idx].qsize(),threshold))]
                     #
@@ -1051,6 +1054,7 @@ class myLightningModule(LightningModule):
                     # print("Saved clean results to {}".format(cleanPath))
                     cleanidx+=1
                 if not self.test_attackedresults[dataset_idx].empty():
+                    Clear=False
                     dirty_filename="dirty"+filename+str(dirtyidx)
                     dirtyPath=os.path.join(path,dirty_filename)
                     dirty_results=[self.test_attackedresults[dataset_idx].get(False) for _ in range(min(self.test_attackedresults[dataset_idx].qsize(),threshold))]
@@ -1065,6 +1069,8 @@ class myLightningModule(LightningModule):
                     np.savez(dirtyPath,logits=logits,labels=labels,alphas=alpha,epsilons=epsilons,numsteps=numsteps)
                     # print("Saved dirty results to {}".format(dirtyPath))
                     dirtyidx+=1
+                if clear:
+                    EmptyCount+=1
                 # print("Saved results for dataset {}".format(dataset_idx))
             if all([self.test_cleanresults[idx].empty() for idx in range(self.test_data_loader_count)]) and all([self.test_attackedresults[idx].empty() for idx in range(self.test_data_loader_count)]):
                 #if test_epoch_end has been called, we can exit the loop
@@ -1074,4 +1080,3 @@ class myLightningModule(LightningModule):
             #     threshold= int(self.args.get("test_batch_size",8)/2)
         
         print("Exiting save results worker")
-        return
