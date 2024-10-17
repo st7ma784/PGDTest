@@ -385,8 +385,8 @@ class MyDataModule(pl.LightningDataModule):
             ##################validation datasets##################
             
             #savee the train dataset class names dict as JSON
-            with open(os.path.join(".","train_class_names.json"),'w') as f:
-                json.dump(self.train_text_names_dict,f)
+            # with open(os.path.join(".","train_class_names.json"),'w') as f:
+            #     json.dump(self.train_text_names_dict,f)
             val_dataset_dict = {}
         
             if 'cifar10' in self.val_dataset_names:
