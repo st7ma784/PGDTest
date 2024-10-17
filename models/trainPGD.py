@@ -980,11 +980,9 @@ class myLightningModule(LightningModule):
                 for file in list(dirty_files):
                     print("Deleting file: ",os.path.join(path,file))
                     os.remove(os.path.join(path,file))
-                    time.sleep(1)
                 for file in list(clean_files):
                     print("Deleting file: ",os.path.join(path,file))
                     os.remove(os.path.join(path,file))
-                    time.sleep(1)
         
 
         # else:
