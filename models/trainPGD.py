@@ -1032,7 +1032,7 @@ class myLightningModule(LightningModule):
         os.makedirs(path,exist_ok=True)
         #set version as a string of all the args
         version=self.version
-        threshold=10
+        threshold=50
         EmptyCount=0
         while EmptyCount < 3:
             time.sleep(1200)
