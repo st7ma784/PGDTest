@@ -811,7 +811,10 @@ class myLightningModule(LightningModule):
         #note : if using multiple nodes, this will need to be a shared file system, or a database... or revert to saving to memory, and praying you have enough!!
         self.save_result_worker_thread=threading.Thread(target=self.save_result_worker)
         self.save_result_worker_thread.start()
-
+        #model is put in inference mode, we're going to change it back:
+        self.model.train()
+        torch.set_grad_enabled(True)
+        
 
     @torch.enable_grad()
     @torch.inference_mode(False)
