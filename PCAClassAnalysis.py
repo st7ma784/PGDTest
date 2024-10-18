@@ -22,7 +22,7 @@ with torch.inference_mode(True):
         names=clip.tokenize(names)
         tokens.update({key:model.encode_text(names).detach().cpu().numpy()})
 
-fullpoints=torch.cat(tokens.values(),axis=0)
+fullpoints=torch.cat(tuple(list(tokens.values())),axis=0)
 optimumscore=fullpoints/torch.norm(fullpoints,dim=-1,keepdim=True)
 optimumscore=optimumscore@optimumscore.T
 ##plot this as a confusion matrix
