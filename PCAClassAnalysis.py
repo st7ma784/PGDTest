@@ -24,7 +24,15 @@ with torch.inference_mode(True):
 
 fullpoints=np.cat(tokens.values(),axis=0)
 X_pca = pca.fit_transform(fullpoints)
+optimumscore=torch.tensor(fullpoints)
+#normalise the optimum score
+optimumscore=optimumscore/torch.norm(optimumscore,dim=-1,keepdim=True)
+optimumscore=optimumscore@optimumscore.T
 
+LossLabels=torch.arange(0,optimumscore.shape[0],device=optimumscore.device)
+Loss=torch.nn.CrossEntropyLoss()
+loss=Loss(optimumscore,LossLabels)
+print("loss: ",loss)
 fig = plt.figure(figsize=(10, 7))
 ax = fig.add_subplot(111)
 for i, key in enumerate(tokens.keys()):
