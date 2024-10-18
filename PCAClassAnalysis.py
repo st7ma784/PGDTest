@@ -11,6 +11,7 @@ pca = PCA(n_components=2)
 class_names = {}
 with open(os.path.join(".","train_class_names.json"),'r') as f:
     class_names = json.load(f)
+Loss=torch.nn.CrossEntropyLoss()
 
 tokens={}
 model, preprocess = clip.load("ViT-B/32",device='cpu')
@@ -26,18 +27,37 @@ fullpoints=torch.cat(tuple(list(tokens.values())),axis=0)
 optimumscore=fullpoints/torch.norm(fullpoints,dim=-1,keepdim=True)
 optimumscore=optimumscore@optimumscore.T
 ##plot this as a confusion matrix
-
 LossLabels=torch.arange(0,optimumscore.shape[0],device=optimumscore.device)
-Loss=torch.nn.CrossEntropyLoss()
 loss=Loss(optimumscore,LossLabels)
+
 print("loss: ",loss)
 plt.matshow(optimumscore)
 plt.title('Confusion Matrix of Original Classes, optimal score is '+str(loss.item()))
 plt.savefig("confusion_matrix.png")
 
+LossByBatchSize={}
+#I want to show the minimum score by batch size by taking a random sample of the vectors...
+for batchsize in [2,4,8,16,32,64,128,256,512]:
+    LossLabels=torch.arange(0,batchsize,device=optimumscore.device)
+    scores=[]
+    for i in range(200):
+        randomindices=torch.randperm(optimumscore.shape[0])[:batchsize]
+        selection=fullpoints[randomindices]
+        selection=selection/torch.norm(selection,dim=-1,keepdim=True)
+        selection=selection@selection.T
+        scores.append(Loss(selection,LossLabels).item())
+    LossByBatchSize.update({batchsize:np.mean(scores)})
+
+#plot the loss by batch size
+plt.plot(list(LossByBatchSize.keys()),list(LossByBatchSize.values()))
+plt.title('Minimum Expected Loss by Batch Size')
+plt.xlabel('Batch Size')
+plt.ylabel('Loss')
+plt.savefig("batchsize_loss.png")
+
 
 X_pca = pca.fit_transform(fullpoints.detach().cpu().numpy())
-optimumscore=torch.tensor(fullpoints)
+optimumscore=fullpoints
 #normalise the optimum score
 
 fig = plt.figure(figsize=(10, 7))
