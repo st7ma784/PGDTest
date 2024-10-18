@@ -20,7 +20,7 @@ with torch.inference_mode(True):
         print("datasets: ",key)
         print("names: ",names)
         names=clip.tokenize(names)
-        tokens.update({key:model.encode_text(names).detach().cpu().numpy()})
+        tokens.update({key:model.encode_text(names)})
 
 fullpoints=torch.cat(tuple(list(tokens.values())),axis=0)
 optimumscore=fullpoints/torch.norm(fullpoints,dim=-1,keepdim=True)
