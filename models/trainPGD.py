@@ -855,7 +855,7 @@ class myLightningModule(LightningModule):
             loss=loss.permute(1,2,0).view(self.test_epsilons.size(0),self.test_alphas.size(0),images.size(0))
             for alpha in range(self.test_alphas.size(0)):
                 for epsilon in range(self.test_epsilons.size(0)):
-                        self.log(f'test_dirty_batch_loss_alpha_{self.test_alphas[alpha]}_epsilon_{self.test_epsilons[epsilon]}_numsteps_{Attack_step}', loss[alpha,epsilon].mean(), on_step=True, on_epoch=True, prog_bar=True, logger=True)
+                        self.log(f'test_dirty_batch_loss_alpha_{self.test_alphas[alpha]}_epsilon_{self.test_epsilons[epsilon]}_numsteps_{Attack_step}', loss[epsilon,alpha].mean(), on_step=True, on_epoch=True, prog_bar=True, logger=True)
                         acc1 = accuracy(output_prompt_adv[alpha,epsilon], torch.arange(images.size(0),device=images.device), topk=(1,))
                         self.log(f'test_dirty_batch_acc_alpha_{self.test_alphas[alpha]}_epsilon_{self.test_epsilons[epsilon]}_numsteps_{Attack_step}', acc1[0].item(), on_step=True, on_epoch=True, prog_bar=True, logger=True)
                         self.test_attackedresults[dataloader_idx].put({"logits": img_embed_dirty[alpha,epsilon], "textlabels": target, "alpha": self.test_alphas[alpha].repeat(target.shape[0]), "epsilon": self.test_epsilons[epsilon].repeat(target.shape[0]), "step": torch.tensor(Attack_step).repeat(target.shape[0])})  
