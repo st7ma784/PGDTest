@@ -19,8 +19,8 @@ with torch.inference_mode(True):
         names=class_names[key]
         print("datasets: ",key)
         print("names: ",names)
-        tokens=clip.tokenize(names)
-        tokens.update({key:clip.encode_text(tokens).detach().cpu().numpy()})
+        names=clip.tokenize(names)
+        tokens.update({key:clip.encode_text(names).detach().cpu().numpy()})
 
 fullpoints=np.cat(tokens.values(),axis=0)
 X_pca = pca.fit_transform(fullpoints)
