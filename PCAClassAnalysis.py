@@ -22,17 +22,22 @@ with torch.inference_mode(True):
         names=clip.tokenize(names)
         tokens.update({key:model.encode_text(names).detach().cpu().numpy()})
 
-fullpoints=np.cat(tokens.values(),axis=0)
-X_pca = pca.fit_transform(fullpoints)
-optimumscore=torch.tensor(fullpoints)
-#normalise the optimum score
-optimumscore=optimumscore/torch.norm(optimumscore,dim=-1,keepdim=True)
+fullpoints=torch.cat(tokens.values(),axis=0)
+optimumscore=fullpoints/torch.norm(fullpoints,dim=-1,keepdim=True)
 optimumscore=optimumscore@optimumscore.T
+##plot this as a confusion matrix
+plt.matshow(optimumscore)
+plt.savefig("confusion_matrix.png")
+
 
 LossLabels=torch.arange(0,optimumscore.shape[0],device=optimumscore.device)
 Loss=torch.nn.CrossEntropyLoss()
 loss=Loss(optimumscore,LossLabels)
 print("loss: ",loss)
+X_pca = pca.fit_transform(fullpoints.detach().cpu().numpy())
+optimumscore=torch.tensor(fullpoints)
+#normalise the optimum score
+
 fig = plt.figure(figsize=(10, 7))
 ax = fig.add_subplot(111)
 for i, key in enumerate(tokens.keys()):
