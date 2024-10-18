@@ -48,11 +48,17 @@ for batchsize in [2,4,8,16,32,64,128,256,512]:
         scores.append(Loss(selection,LossLabels).item())
     LossByBatchSize.update({batchsize:np.mean(scores)})
 
+
 #plot the loss by batch size
+#new plot
+plt.figure()
 plt.plot(list(LossByBatchSize.keys()),list(LossByBatchSize.values()))
 plt.title('Minimum Expected Loss by Batch Size')
+#use log scale on X axis
+plt.xscale('log')
 plt.xlabel('Batch Size')
 plt.ylabel('Loss')
+plt.show()
 plt.savefig("batchsize_loss.png")
 
 
