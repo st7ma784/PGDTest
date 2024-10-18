@@ -50,6 +50,7 @@ def train(config={
             #plugins=[SLURMEnvironment()],
             #https://lightning.ai/docs/pytorch/stable/clouds/cluster_advanced.html
             logger=logtool,
+            inference_mode=False,
             # strategy=FSDPStrategy(accelerator="gpu",
             #                        parallel_devices=6,
             #                        cluster_environment=SLURMEnvironment(),
