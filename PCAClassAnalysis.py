@@ -26,14 +26,16 @@ fullpoints=torch.cat(tokens.values(),axis=0)
 optimumscore=fullpoints/torch.norm(fullpoints,dim=-1,keepdim=True)
 optimumscore=optimumscore@optimumscore.T
 ##plot this as a confusion matrix
-plt.matshow(optimumscore)
-plt.savefig("confusion_matrix.png")
-
 
 LossLabels=torch.arange(0,optimumscore.shape[0],device=optimumscore.device)
 Loss=torch.nn.CrossEntropyLoss()
 loss=Loss(optimumscore,LossLabels)
 print("loss: ",loss)
+plt.matshow(optimumscore)
+plt.title('Confusion Matrix of Original Classes, optimal score is '+str(loss.item()))
+plt.savefig("confusion_matrix.png")
+
+
 X_pca = pca.fit_transform(fullpoints.detach().cpu().numpy())
 optimumscore=torch.tensor(fullpoints)
 #normalise the optimum score
