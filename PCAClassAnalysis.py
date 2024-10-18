@@ -20,7 +20,7 @@ with torch.inference_mode(True):
         print("datasets: ",key)
         print("names: ",names)
         names=clip.tokenize(names)
-        tokens.update({key:clip.encode_text(names).detach().cpu().numpy()})
+        tokens.update({key:model.encode_text(names).detach().cpu().numpy()})
 
 fullpoints=np.cat(tokens.values(),axis=0)
 X_pca = pca.fit_transform(fullpoints)
