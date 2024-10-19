@@ -229,7 +229,7 @@ if __name__ == '__main__':
     #LEts pretend stephen fixed something
     #OR To run with Default Args
     else:
-        trials=hyperparams.generate_trials(NumTrials)
+        trials=myparser.generate_wandb_trials(NumTrials,entity="st7ma784",project="AllDataPGN")
 
         for i,trial in enumerate(trials):
             command=SlurmRun(trial)

@@ -139,3 +139,7 @@ train2017.zip.002
 train2017.zip.003
 train2017.zip.004
 train2017.zip
+train2017/*
+train2017
+annotations
+annotations/*

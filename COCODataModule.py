@@ -141,54 +141,87 @@ class CustomImageNetDataset(Dataset):
 
         return image, label
 import random
+from pycocotools.coco import COCO
 
 class CustomCOCODatasetWithClasses(CocoCaptions):
-    def __init__(self, root, annFile, transform,**kwargs):
+    def __init__(self, root, annFile,instances_file, transform,**kwargs):
         super().__init__(root, annFile, transform=transform)
         self.transform = transform
+        self.instances_file=instances_file
+        self.cocoInst = COCO(instances_file)
+        # print(self.cocoInst.anns.keys())
+
 
     def lookup_classes(self, idx):
         ann_id = self.ids[idx]
-        target = self.coco.anns[ann_id]['category_id']
+       # print("ann_id",ann_id)
+        image_id = self.coco.anns[ann_id]['image_id']
+        #look up the image id in the instances file
+        anns = self.cocoInst.loadAnns(self.cocoInst.getAnnIds(imgIds=image_id))
+        #print("anns",anns)
+        target = [self.cocoInst.loadCats(ann['category_id'])[0]['name'] for ann in anns][0]
+        # print("target",target)
         return target
     def __getitem__(self, idx):
         img, target = super().__getitem__(idx)
-        classes=self.lookup_classes(idx)      
+            
+            
         captions=random.choice(target)
         captions=clip.tokenize(captions)
-        print("classes")
+        #print("classes")
+        # if self.transform:
+        #     img = self.transform(img)
 
+        try:
+            classes=self.lookup_classes(idx)      
+        except:
+            print("Error looking up classes: ",idx)
+            return self.__getitem__(random.randint(0,len(self.ids)-1))
 
-        if self.transform:
-            img = self.transform(img)
+        # if self.transform:
+        #     img = self.transform(img)
         return img, classes, captions
 import clip
 
 class CustomtorchVisionDataset2(Dataset):
-    def __init__(self, dataset, texts):
+    def __init__(self, dataset, tokenized_text, other_texts):
         self.dataset = dataset
-        self.texts = texts
-        self.tokenizer=clip.tokenize
+        self.tokenized_texts = tokenized_text
+        self.default_text=other_texts
     def __len__(self):
         return len(self.dataset)
 
     def __getitem__(self, idx):
         image, label = self.dataset[idx]
-        text = self.texts[label] #A picture of {label}
-        text = self.tokenizer(text) #should be 77 long
+        text=self.default_text
+        try:
+
+            text = self.tokenized_texts[label] #A picture of {label}
+            #print("text:",text.shape)
+        except:
+            print("Error in getting text")
+            print("label:",label)
+            print("len of dataset:",len(self.dataset))
+            print("len of texts:",len(self.tokenized_texts))
+            # text="A picture of something"
+        # text = self.tokenizer(text) #should be 77 long
         #i keep getting an error saying it's resizing non-resizable storage. This is caused because the image is not in RGB format. ? 
 
 
 
         return image, label, text 
 
+
+
 class MyDataModule(pl.LightningDataModule):
-    def __init__(self,Cache_dir, dataset: str,batch_size: int,imagenet_root: str="none", tinyimagenet_root: str="none",  val_dataset_names: List[str]=None,**kwargs):
+    def __init__(self,Cache_dir, dataset: str,batch_size: int,test_batch_size:int=-1,imagenet_root: str="none", tinyimagenet_root: str="none",  val_dataset_names: List[str]=None,**kwargs):
         super().__init__()
         self.cache_dir = Cache_dir
         self.imagenet_root = imagenet_root
         self.tinyimagenet_root = tinyimagenet_root
         self.datasetname = dataset    #not used any more! 
+        self.test_batch_size = test_batch_size if test_batch_size>0 else batch_size
+
         self.val_dataset_names = val_dataset_names if val_dataset_names is not None else ['cifar10', 'cifar100', 'STL10', 'SUN397', 'Food101',
                                  'flowers102', 'dtd', 'fgvc_aircraft','tinyImageNet',# 'ImageNet'
                                 'Caltech256', 'PCAM'] #StanfordCars --url; no longer valid. 'EuroSAT' --ssl error 'Caltech101'- md5? 'tinyImageNet', 'ImageNet', oxfordpet' --labels not indexable
@@ -200,15 +233,24 @@ class MyDataModule(pl.LightningDataModule):
 
             self.val_dataset_names = ['cifar10']
             self.train_dataset_names = ['cifar10']
-
+        self.ISHEC=os.getenv("ISHEC",False)
         self.template = 'This is a photo of a {}'
         self.preprocess = preprocess224_interpolate
-        
+        self.tokenizer=clip.tokenize
+        self.default=self.tokenizer("A picture of something")
     def prepare_data(self):
         # No preparation needed
         self.setup(download=True)
 
 
+    def refine_classname(self, class_names):
+        class_tokens=[]
+        for i, class_name in enumerate(class_names):
+            class_names[i] = class_name.lower().replace('_', ' ').replace('-', ' ').replace('/', ' ')
+            class_names[i] = self.template.format(class_names[i])
+            tokens = self.tokenizer(class_names[i])
+            class_tokens.append(tokens)
+        return class_tokens
     def setup(self, stage=None,download=False):
 
         if stage == 'fit' or stage is None:
@@ -221,6 +263,7 @@ class MyDataModule(pl.LightningDataModule):
             from PIL import Image
             import zipfile
             from torch.utils.data import Dataset, DataLoader
+            from pySmartDL import SmartDL as SmartDL
             if not os.path.exists(self.cache_dir):
                 os.makedirs(self.cache_dir,exist_ok=True)
             if not os.path.exists(os.path.join(self.cache_dir,"annotations")):
@@ -235,7 +278,7 @@ class MyDataModule(pl.LightningDataModule):
                         print("obj Path ",obj.get_dest())
                     while not obj.isFinished():
                         #print("Speed: %s" % obj.get_speed(human=True))
-                        print("Eta: %s" % obj.get_eta(human=True))
+                        # print("Eta: %s" % obj.get_eta(human=True))
                         time.sleep(5)
                     if obj.isSuccessful():
                         print("Downloaded: %s" % obj.get_dest())
@@ -262,13 +305,15 @@ class MyDataModule(pl.LightningDataModule):
                                 except:
                                     print("Error extracting images")
                                     print("path:",path)
-                                    print("data_dir:",self.data_dir)
+                                    # print("data_dir:",self.data_dir)
                         print("Extracted: %s" % path)
             #now load the dataset
             annFile=os.path.join(self.cache_dir,"annotations","captions_train2017.json")
+            instanceFile=os.path.join(self.cache_dir,"annotations","instances_train2017.json")
             root=os.path.join(self.cache_dir,"train2017")
-            self.train_dataset_dict.update({"coco":CustomCOCODatasetWithClasses(root,annFile,self.preprocess)})
-            self.train_dataset = CustomCOCODatasetWithClasses(root,annFile,self.preprocess)
+            dataset_coco=CustomCOCODatasetWithClasses(root,annFile,instanceFile,self.preprocess)
+            self.train_dataset_dict.update({"coco":dataset_coco})
+            self.train_dataset =dataset_coco
 
             # self.train_text_names_dict.update({"coco":get_text_prompts_train(self, self.train_dataset_dict["coco"])})
                 # self.train_datasets = [CustomtorchVisionDataset2(dataset, class_names) for dataset, class_names in [(self.train_dataset_dict[k], self.train_text_names_dict[k]) for k in self.train_dataset_dict.keys()]]
@@ -453,7 +498,6 @@ class MyDataModule(pl.LightningDataModule):
             splits=[torch.utils.data.random_split(v,[int(0.95*len(v)),len(v)-int(0.95*len(v))]) for v in self.val_datasets]
             self.test_datasets, self.val_datasets= zip(*splits)
 
-
     def train_dataloader(self):
         return DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True, num_workers=4 if not self.ISHEC else 4 ,pin_memory=not self.ISHEC,prefetch_factor=4 if not self.ISHEC else 2,drop_last=True)
 
@@ -461,7 +505,9 @@ class MyDataModule(pl.LightningDataModule):
         return [DataLoader(dataset, batch_size=self.batch_size, shuffle=True, num_workers=4 if not self.ISHEC else 4, pin_memory=not self.ISHEC,prefetch_factor=4 if not self.ISHEC else 2,drop_last=True) for dataset in self.val_datasets]
 
     def test_dataloader(self):
-        return [DataLoader(dataset, batch_size=self.batch_size, shuffle=False, num_workers=4 if not self.ISHEC else 4, pin_memory=not self.ISHEC,prefetch_factor=4 if not self.ISHEC else 2,drop_last=True) for dataset in self.test_datasets]
+        return [DataLoader(dataset, batch_size=self.test_batch_size, shuffle=False, num_workers=4 if not self.ISHEC else 4, pin_memory=not self.ISHEC,prefetch_factor=4 if not self.ISHEC else 2,drop_last=True) for dataset in self.test_datasets]
+
+
 
 
 

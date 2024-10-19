@@ -73,7 +73,7 @@ class myLightningModule(LightningModule):
         self.criterion = torch.nn.CrossEntropyLoss(reduction="mean")
         self.test_criterion = torch.nn.CrossEntropyLoss(reduction="none")
         self.criterion_kl = nn.KLDivLoss(reduction="sum")
-        self.versioncriteria=self.args.get("keys_of_interest","learning_rate batch_size train_eps train_numsteps train_eps train_stepsize attack_type prompt_size add_prompt_size optimizer freeze_text".split())
+        self.versioncriteria=self.args.get("keys_of_interest","dataset labelType learning_rate batch_size train_eps train_numsteps train_eps train_stepsize attack_type prompt_size add_prompt_size optimizer freeze_text".split())
         self.version="_".join([str(self.args.get(key,"")) for key in self.versioncriteria])
         print("Version is: ",self.version)
 
@@ -701,14 +701,17 @@ class myLightningModule(LightningModule):
         return_dict={}
         X=X.clone().detach()
         text_tokens=text_tokens.clone().detach()
+        with torch.no_grad():
+            scale_text_embed=self.make_labels(X,text_tokens)
+        
+        scale_text_embed = scale_text_embed / scale_text_embed.norm(dim=-1, keepdim=True)
         for iter_count in range(max(attack_iters)):
             new_images = torch.add(X, delta)
             prompted_images = torch.div(torch.sub(new_images, self.mu_img.clone()), self.std_img.clone()) #normalize(new_images) but preserves grad
 
             img_embed=self.model.encode_image(prompted_images.flatten(0,-4))
             img_embed = img_embed / img_embed.norm(dim=-1, keepdim=True)
-            scale_text_embed=self.make_labels(X,text_tokens)
-            scale_text_embed = scale_text_embed / scale_text_embed.norm(dim=-1, keepdim=True)
+            
             # print("requires grad on scale_text_embed? {} shape : {}".format(scale_text_embed.requires_grad,scale_text_embed.shape))
 
             output = img_embed @ scale_text_embed.t()
@@ -771,7 +774,7 @@ class myLightningModule(LightningModule):
         delta=self.init_batch_delta(text_tokens,epsilon).unsqueeze(0).repeat(alpha.shape[0],1,1,1)#make epsilon stacks of delta and repeat for each alpha so we have shape alpha,epsilon,B,77
         #instead we should use the hidden shape after the clip token emb, and then return this to the original shape later. 
         self.insert_eval_model_hook() # TODO: insert hooks to save the features of whichever layer we want to use for the text loss
-        self.make_labels(X,text_tokens) #do this with hooks
+        self.make_labels(X,text_tokens).detach() #do this with hooks
         clean_features=self.test_text_features
         for _ in range(attack_iters):
 
@@ -875,18 +878,18 @@ class myLightningModule(LightningModule):
         text=text.clone().squeeze(1)
         images=images.clone()
         target=target.clone()
-        img_embed=self.model.encode_image(images)
-        scale_text_embed=self.make_labels(images,text)
+        img_embed=self.model.encode_image(images).detach()
+        scale_text_embed=self.make_labels(images,text).detach()
         img_embed_norm = img_embed / img_embed.norm(dim=-1, keepdim=True)
         scale_text_embed_norm = scale_text_embed / scale_text_embed.norm(dim=-1, keepdim=True)
         output_prompt = img_embed_norm @ scale_text_embed_norm.t()        
 
         self.test_cleanresults[dataloader_idx].put({"logits":img_embed.detach(), "textlabels":target}) #using target like this is fine because each dataloader is tested and logged independently.
-        loss = self.criterion(output_prompt, torch.arange(images.size(0), device=self.device))
+        loss = self.criterion(output_prompt, torch.arange(images.size(0), device=self.device)).detach()
 
         # measure accuracy and record loss
         acc1 = accuracy(output_prompt, torch.arange(images.shape[0],device=images.device), topk=(1,))
-        self.log('test_clean_batch_loss', loss.detach(), on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        self.log('test_clean_batch_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
         self.log('test_clean_batch_acc', acc1[0].item(), on_step=True, on_epoch=True, prog_bar=True, logger=True)
 
 
@@ -1111,8 +1114,8 @@ class myLightningModule(LightningModule):
                     np.savez(cleanPath,logits=logits,labels=labels)
                     # print("Saved clean results to {}".format(cleanPath))
                     cleanidx+=1
-                if not self.test_attackedresults[dataset_idx].empty():
-                    Clear=False
+                elif not self.test_attackedresults[dataset_idx].empty():
+                    clear=False
                     dirty_filename="dirty"+filename+str(dirtyidx)
                     dirtyPath=os.path.join(path,dirty_filename)
                     dirty_results=[self.test_attackedresults[dataset_idx].get(False) for _ in range(min(self.test_attackedresults[dataset_idx].qsize(),threshold))]
