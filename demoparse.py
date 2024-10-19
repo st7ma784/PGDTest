@@ -103,7 +103,9 @@ class baseparser(HyperOptArgumentParser):
         self.opt_list("--prompt_size", default=30, type=int, tunable=False)
         self.opt_list("--add_prompt_size", default=0, type=int, tunable=False)
         self.opt_list("--optimizer", default='sgd', type=str, options=["sgd","adam","adamw"],tunable=True)
+        self.opt_list("--labelType", default='text', type=str, options= ["image","text","Modimage"],tunable=True)
         # dataset
+
         self.opt_list("--root", default=os.getenv("$PWD","./data"), options=[os.getenv("$PWD","/data")], type=str, tunable=False)
         self.opt_list("--dataset", default='cifar10', options=["coco","tinyImageNet"],type=str, tunable=True)
         self.opt_list("--image_size", default=224, type=int, tunable=False)

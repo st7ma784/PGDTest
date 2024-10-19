@@ -18,7 +18,7 @@ def train(config={
     model=myLightningModule(**config)
     if dir is None:
         dir=config.get("dir",".")
-    if Dataset is None:
+    if config.get("dataset",None)!= 'coco':
         from DataModule import MyDataModule
         Dataset=MyDataModule(Cache_dir=dir,**config)
     elif config.get("dataset",None)== 'coco':

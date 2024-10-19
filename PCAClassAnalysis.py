@@ -72,7 +72,7 @@ for i, key in enumerate(tokens.keys()):
     points=pca.transform(tokens[key])
     ax.scatter(points[:,0],points[:,1], label=key, alpha=0.5)
 
-ax.set_title('2D PCA of Original and Adversarial Samples')
+ax.set_title('2D PCA of Text Embeddings for each class')
 ax.set_xlabel('Principal Component 1')
 ax.set_ylabel('Principal Component 2')
 ax.legend()
@@ -80,3 +80,95 @@ plt.show()
 
 #save the pca plt
 fig.savefig("PCA.png")
+
+#next get the MSCOCO dataset and do the same thing, but iterate over all captions, and then encode them and use the same PCA to plot them
+
+from COCODataModule import CustomCOCODatasetWithClasses
+from torch.utils.data import DataLoader
+from torchvision import transforms
+import matplotlib.pyplot as plt
+import numpy as np
+import json
+import os
+import clip
+import zipfile
+from pySmartDL import SmartDL
+import time
+import torch
+
+#load the dataset
+train_transform = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.ToTensor()
+])
+val_transform = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.ToTensor()
+])
+if not os.path.exists(os.path.join(".","data","annotations")):
+            URLS=["http://images.cocodataset.org/zips/train2017.zip","http://images.cocodataset.org/annotations/annotations_trainval2017.zip"]
+            
+            for url in URLS:
+                print("Downloading",url)
+                obj=SmartDL(url,os.path.join(".","data",str(url).split('/')[-1]),progress_bar=False)
+                obj.FileName=str(url).split('/')[-1]
+                if not os.path.exists(obj.get_dest()):
+                    obj.start(blocking=False)
+                    print("obj Path ",obj.get_dest())
+                while not obj.isFinished():
+                    #print("Speed: %s" % obj.get_speed(human=True))
+                    print("Eta: %s" % obj.get_eta(human=True))
+                    time.sleep(5)
+                if obj.isSuccessful():
+                    print("Downloaded: %s" % obj.get_dest())
+                path = obj.get_dest()
+                if obj.FileName.startswith("annotations"):
+                    print("Extracting annotations")
+                    print("path:",path)
+
+                    with zipfile.ZipFile(path, 'r') as zip_ref:
+                        try:
+                            zip_ref.extractall(".","data")
+                        except:
+                            print("Error extracting annotations")
+                            print("path:",path)
+                            
+                else:
+                    print("Extracting images")
+                    print("path:",path)
+                    if obj.FileName.endswith(".zip"):
+                        print("Extracting zip")
+                        with zipfile.ZipFile(path, 'r') as zip_ref:
+                            try:
+                                zip_ref.extractall(".","data")
+                            except:
+                                print("Error extracting images")
+                                print("path:",path)
+                    print("Extracted: %s" % path)
+        #now load the dataset
+train_dataset = CustomCOCODatasetWithClasses(os.path.join(".","data","train2017"), os.path.join(".","data","annotations","captions_train2017.json"), preprocess)
+train_loader = DataLoader(train_dataset, batch_size=64, shuffle=False, num_workers=4)
+fig = plt.figure(figsize=(10, 7))
+with torch.inference_mode():
+    labels=np.array([])
+    X_pca_list=np.array([])
+    for i in range(10):
+        for batch in train_loader:
+            _, targets,captions = batch
+            representations = model.encode_text(captions)
+            #do PCA on the representations
+            X_pca = pca.fit_transform(representations.detach().cpu().numpy())
+            
+            #extend the labels
+            X_pca_list = np.concatenate((X_pca_list, X_pca), axis=0)
+            labels=np.concatenate((labels,targets),axis=0)
+    for target in set(labels):
+        mask=labels==target
+        points=X_pca_list[mask]
+        plt.scatter(points[:,0],points[:,1], label="Class "+str(target), alpha=0.5) 
+plt.title('2D PCA of Text Embeddings for each class in COCO dataset')   
+plt.xlabel('Principal Component 1')
+plt.ylabel('Principal Component 2')
+plt.legend()
+plt.show()
+fig.savefig("PCA_COCO.png")

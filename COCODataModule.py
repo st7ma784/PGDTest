@@ -142,7 +142,7 @@ class CustomImageNetDataset(Dataset):
         return image, label
 import random
 
-def CustomCOCODatasetWithClasses(CocoCaptions):
+class CustomCOCODatasetWithClasses(CocoCaptions):
     def __init__(self, root, annFile, transform,**kwargs):
         super().__init__(root, annFile, transform=transform)
         self.transform = transform
@@ -152,7 +152,7 @@ def CustomCOCODatasetWithClasses(CocoCaptions):
         target = self.coco.anns[ann_id]['category_id']
         return target
     def __getitem__(self, idx):
-        img, target = super(CocoCaptions, self).__getitem__(idx)
+        img, target = super().__getitem__(idx)
         classes=self.lookup_classes(idx)      
         captions=random.choice(target)
         captions=clip.tokenize(captions)

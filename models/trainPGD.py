@@ -100,7 +100,18 @@ class myLightningModule(LightningModule):
 
         else:
             raise ValueError
-       
+        if args.get("labelType","image")=="image":
+            self.make_labels=self.make_image_labels
+            self.insert_eval_model_hook=self.insert_visual_model_ori_hook
+        elif args.get("labelType","image")=="text":
+            self.make_labels=self.make_text_labels
+            self.insert_eval_model_hook=self.insert_text_model_hook
+        elif args.get("labelType","image")=="Modimage":
+
+            self.make_labels=self.make_Modimage_labels
+            self.insert_eval_model_hook=self.insert_visual_model
+        else:
+            raise ValueError
         if self.args.get("attack_type","pgd")=="pgd":
             self.attack=self.attack_pgd
         elif self.args.get("attack_type","pgd")=="CW":
@@ -117,7 +128,39 @@ class myLightningModule(LightningModule):
         self.mu_img = torch.tensor((0.485, 0.456, 0.406)).view(3,1,1).to(self.device)
         self.std_img = torch.tensor((0.229, 0.224, 0.225)).view(3,1,1).to(self.device)
         
-
+    def insert_text_model_hook(self):
+        self.text_features={}
+        def hook_fn(module, input, output):
+            self.text_features[module]=output
+        for layer in self.model.text:
+            layer.register_forward_hook(hook_fn)
+    def remove_text_model_hook(self):
+        for layer in self.model.text:
+            layer._forward_hooks.clear()
+    def insert_visual_model_hook(self):
+        self.visual_features={}
+        def hook_fn(module, input, output):
+            self.visual_features[module]=output
+        for layer in self.model.visual:
+            layer.register_forward_hook(hook_fn)
+    def remove_visual_model_hook(self):
+        for layer in self.model.visual:
+            layer._forward_hooks.clear()
+    def insert_visual_model_ori_hook(self):
+        self.visual_features={}
+        def hook_fn(module, input, output):
+            self.visual_features[module]=output
+        for layer in self.model_ori.visual:
+            layer.register_forward_hook(hook_fn)
+    def remove_visual_model_ori_hook(self):
+        for layer in self.model_ori.visual:
+            layer._forward_hooks.clear()
+    def make_Modimage_labels(self,images,text):
+        return self.model.encode_image(images)
+    def make_image_labels(self,images,text):
+        return self.model_ori.encode_image(images)
+    def make_text_labels(self,images,text):
+        return self.model.encode_text(text)
     def init_uniform(self, X,eps):
         delta=  torch.zeros_like(X,device=self.device,).uniform_(-eps, eps)
         delta = clamp(delta, self.lower_limit - X, self.upper_limit - X)
@@ -147,8 +190,8 @@ class myLightningModule(LightningModule):
     @torch.enable_grad()
     def attack_text_pgd(self,  X, target, text_tokens, alpha, attack_iters, restarts=1, early_stop=True, epsilon=0):
         delta=self.init_delta(text_tokens,epsilon)
-        self.insert_text_model_hook()
-        self.model.encode_text(text_tokens) #do this with hooks 
+        self.insert_eval_model_hook()
+        self.make_labels(X,text_tokens) #do this with hooks 
         clean_features=self.text_features
         for _ in range(attack_iters):
 
@@ -162,8 +205,8 @@ class myLightningModule(LightningModule):
 
             img_embed=self.model.encode_image(X)
             #ensure self.model has text hooks 
-            self.insert_text_model_hook()
-            scale_text_embed=self.model.encode_text(text_tokens)
+            self.insert_eval_model_hook()
+            scale_text_embed=self.make_labels(X,text_tokens)
             features=self.text_features
             #do Loss between each layer
             text_loss=torch.zeros((X.shape[0],X.shape[0]),device=self.device)
@@ -222,7 +265,7 @@ class myLightningModule(LightningModule):
             prompted_images = torch.div(torch.sub(new_images, self.mu_img), self.std_img) #normalize(new_images) but preserves grad
             img_embed=self.model.encode_image(prompted_images)
             img_embed_norm = img_embed / img_embed.norm(dim=-1, keepdim=True)
-            scale_text_embed=self.model.encode_text(text_tokens)
+            scale_text_embed=self.make_labels(X,text_tokens)
             scale_text_embed = scale_text_embed / scale_text_embed.norm(dim=-1, keepdim=True)
             output = img_embed_norm @ scale_text_embed.t()
             loss = self.criterion(output, torch.arange(prompted_images.size(0), device=self.device))
@@ -243,26 +286,26 @@ class myLightningModule(LightningModule):
         self.log("min_attack_loss",min(losses))
         return X+delta,text_tokens
     
-    @torch.enable_grad()
-    def attack_pgd_noprompt(self, X, target, text_tokens, alpha, attack_iters, restarts=1, early_stop=True, epsilon=0):
-        delta=self.init_delta(X,epsilon)
-        for _ in range(attack_iters):
-            _images = normalize(X + delta)
-            output= multiGPU_CLIP( self.model, _images, text_tokens)
-            loss = self.criterion(output,  torch.arange(_images.size(0), device=self.device)) #edited from original paper to remove fixed target classes
-            loss.backward()
-            #Dear Afra, here is something you should probably log with self.log("attack_loss",loss)
-            self.log("attack_loss",loss)
-            grad = delta.grad.detach()
-            d = delta[:, :, :, :]
-            g = grad[:, :, :, :]
-            x = X[:, :, :, :]
-            d=self.clamp(d,alpha,g,epsilon)
-            d = clamp(d, self.lower_limit - x, self.upper_limit - x)
-            delta.data[:, :, :, :] = d
-            delta.grad.zero_()
+    # @torch.enable_grad()
+    # def attack_pgd_noprompt(self, X, target, text_tokens, alpha, attack_iters, restarts=1, early_stop=True, epsilon=0):
+    #     delta=self.init_delta(X,epsilon)
+    #     for _ in range(attack_iters):
+    #         _images = normalize(X + delta)
+    #         output= multiGPU_CLIP( self.model, _images, text_tokens)
+    #         loss = self.criterion(output,  torch.arange(_images.size(0), device=self.device)) #edited from original paper to remove fixed target classes
+    #         loss.backward()
+    #         #Dear Afra, here is something you should probably log with self.log("attack_loss",loss)
+    #         self.log("attack_loss",loss)
+    #         grad = delta.grad.detach()
+    #         d = delta[:, :, :, :]
+    #         g = grad[:, :, :, :]
+    #         x = X[:, :, :, :]
+    #         d=self.clamp(d,alpha,g,epsilon)
+    #         d = clamp(d, self.lower_limit - x, self.upper_limit - x)
+    #         delta.data[:, :, :, :] = d
+    #         delta.grad.zero_()
 
-        return delta
+    #     return delta
 
     @torch.enable_grad()
     def attack_CW(self, X, target, text_tokens, alpha,attack_iters, restarts=1, early_stop=True, epsilon=0):
@@ -272,9 +315,12 @@ class myLightningModule(LightningModule):
             # output = model(normalize(X ))
             prompted_images = self.prompter(normalize(X + delta))
             # prompt_token = self.add_prompter()
-            output= multiGPU_CLIP(self.model, prompted_images, text_tokens)#, prompt_token)
-            
-            
+           
+            img_embed=self.model.encode_image(prompted_images)
+            img_embed_norm = img_embed / img_embed.norm(dim=-1, keepdim=True)
+            scale_text_embed=self.make_labels(X,text_tokens)
+            scale_text_embed = scale_text_embed / scale_text_embed.norm(dim=-1, keepdim=True)
+            output = img_embed_norm @ scale_text_embed.t()
             
             
             label_mask = one_hot_embedding(torch.arange(X.shape(0),device=X.device), output.size(1))
@@ -302,9 +348,15 @@ class myLightningModule(LightningModule):
         loss=[]
         for _ in range(attack_iters):
             # output = model(normalize(X ))
-            _images = normalize(X + delta)
+            #_images = normalize(X + delta)
             # output, _ = model(_images, text_tokens)
-            output= multiGPU_CLIP(self.model, _images, text_tokens)
+            new_images = delta+X
+            prompted_images = torch.div(torch.sub(new_images, self.mu_img), self.std_img) #normalize(new_images) but preserves grad
+            img_embed=self.model.encode_image(prompted_images)
+            img_embed_norm = img_embed / img_embed.norm(dim=-1, keepdim=True)
+            scale_text_embed=self.make_labels(X,text_tokens)
+            scale_text_embed = scale_text_embed / scale_text_embed.norm(dim=-1, keepdim=True)
+            output = img_embed_norm @ scale_text_embed.t()
             label_mask = one_hot_embedding(torch.arange(X.shape[0],device=X.device), output.size(1))
             correct_logit = torch.sum(label_mask * output, dim=1)
             wrong_logit, _ = torch.max((1 - label_mask) * output - 1e4 * label_mask, axis=1)
@@ -363,7 +415,7 @@ class myLightningModule(LightningModule):
         images, target,text = batch #label shouldnt be used here! 
         #print(text.shape)
         text=text.squeeze(1) #B,77
-        text_embed=self.model.encode_text(text) #B,512
+        text_embed=self.make_labels(images,text) #B,512
         # ori_text_embed=self.model_ori.encode_text(text)
         text_embed= text_embed/ text_embed.norm(dim=-1, keepdim=True) #B,512
         # ori_text_embed= ori_text_embed/ ori_text_embed.norm(dim=-1, keepdim=True)
@@ -469,7 +521,7 @@ class myLightningModule(LightningModule):
         #     print("No target in dataloader {}".format(dataloader_idx))
         
         img_embed=self.model.encode_image(images)
-        scale_text_embed=self.model.encode_text(text)
+        scale_text_embed=self.make_labels(images,text)
         img_embed_norm = img_embed / img_embed.norm(dim=-1, keepdim=True)
         scale_text_embed_norm = scale_text_embed / scale_text_embed.norm(dim=-1, keepdim=True)
         output_prompt = img_embed_norm @ scale_text_embed_norm.t()
@@ -509,7 +561,7 @@ class myLightningModule(LightningModule):
         dirtyImages,dirtyText=self.testattack(images, target, text, self.args.get("test_stepsize",2), self.args.get("test_numsteps",20), epsilon=self.args.get("test_eps",1))
 
         img_embed=self.model.encode_image(clip_img_preprocessing(dirtyImages))
-        scale_text_embed=self.model.encode_text(dirtyText)
+        scale_text_embed=self.make_labels(images,dirtyText)   #make labels out of whatevers clean from prior line. 
         img_embed_norm = img_embed / img_embed.norm(dim=-1, keepdim=True)
         scale_text_embed_norm = scale_text_embed / scale_text_embed.norm(dim=-1, keepdim=True)
         output_prompt_adv = img_embed_norm @ scale_text_embed_norm.t()
@@ -655,7 +707,7 @@ class myLightningModule(LightningModule):
 
             img_embed=self.model.encode_image(prompted_images.flatten(0,-4))
             img_embed = img_embed / img_embed.norm(dim=-1, keepdim=True)
-            scale_text_embed=self.model.encode_text(text_tokens)
+            scale_text_embed=self.make_labels(X,text_tokens)
             scale_text_embed = scale_text_embed / scale_text_embed.norm(dim=-1, keepdim=True)
             # print("requires grad on scale_text_embed? {} shape : {}".format(scale_text_embed.requires_grad,scale_text_embed.shape))
 
@@ -689,7 +741,7 @@ class myLightningModule(LightningModule):
             # prompt_token = self.add_prompter()
             img_embed=self.model.encode_image(prompted_images.flatten(0,-4))
             img_embed = img_embed / img_embed.norm(dim=-1, keepdim=True)
-            scale_text_embed=self.model.encode_text(text_tokens)
+            scale_text_embed=self.make_labels(X,text_tokens)
             scale_text_embed = scale_text_embed / scale_text_embed.norm(dim=-1, keepdim=True)
             # print("requires grad on scale_text_embed? {} shape : {}".format(scale_text_embed.requires_grad,scale_text_embed.shape))
 
@@ -718,8 +770,8 @@ class myLightningModule(LightningModule):
 
         delta=self.init_batch_delta(text_tokens,epsilon).unsqueeze(0).repeat(alpha.shape[0],1,1,1)#make epsilon stacks of delta and repeat for each alpha so we have shape alpha,epsilon,B,77
         #instead we should use the hidden shape after the clip token emb, and then return this to the original shape later. 
-        self.insert_text_model_hook()
-        self.model.encode_text(text_tokens) #do this with hooks 
+        self.insert_eval_model_hook() # TODO: insert hooks to save the features of whichever layer we want to use for the text loss
+        self.make_labels(X,text_tokens) #do this with hooks
         clean_features=self.test_text_features
         for _ in range(attack_iters):
 
@@ -733,8 +785,8 @@ class myLightningModule(LightningModule):
 
             img_embed=self.model.encode_image(X)
             #ensure self.model has text hooks 
-            self.insert_text_model_hook()
-            scale_text_embed=self.model.encode_text(text_tokens)
+            self.insert_eval_model_hook()
+            scale_text_embed=self.make_labels(X,text_tokens)
             features=self.test_text_features
             #do Loss between each layer
             text_loss=torch.zeros((X.shape[0],X.shape[0]),device=self.device)
@@ -824,7 +876,7 @@ class myLightningModule(LightningModule):
         images=images.clone()
         target=target.clone()
         img_embed=self.model.encode_image(images)
-        scale_text_embed=self.model.encode_text(text)
+        scale_text_embed=self.make_labels(images,text)
         img_embed_norm = img_embed / img_embed.norm(dim=-1, keepdim=True)
         scale_text_embed_norm = scale_text_embed / scale_text_embed.norm(dim=-1, keepdim=True)
         output_prompt = img_embed_norm @ scale_text_embed_norm.t()        
@@ -844,7 +896,7 @@ class myLightningModule(LightningModule):
             
             attacked_images, attacked_text = result_data
             img_embed_dirty = self.model.encode_image(attacked_images.flatten(0,-4)).detach()
-            scale_text_embed_dirty = self.model.encode_text(attacked_text.flatten(0,-2))
+            scale_text_embed_dirty = self.make_labels(attacked_images.flatten(0,-4),attacked_text.flatten(0,-2)).detach()
             img_embed_norm_dirty = img_embed_dirty / img_embed_dirty.norm(dim=-1, keepdim=True)
             scale_text_embed_norm_dirty = scale_text_embed_dirty / scale_text_embed_dirty.norm(dim=-1, keepdim=True)
             output_prompt_adv = img_embed_norm_dirty @ scale_text_embed_norm_dirty.t()
