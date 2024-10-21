@@ -147,12 +147,12 @@ if not os.path.exists(os.path.join(".","data","annotations")):
                     print("Extracted: %s" % path)
         #now load the dataset
 train_dataset = CustomCOCODatasetWithClasses(os.path.join(".","data","train2017"), os.path.join(".","data","annotations","captions_train2017.json"),os.path.join(".","data","annotations","instances_train2017.json"), preprocess)
-train_loader = DataLoader(train_dataset, batch_size=64, shuffle=False, num_workers=4)
+train_loader = DataLoader(train_dataset, batch_size=64, shuffle=False, prefetch_factor=3,num_workers=16)
 fig = plt.figure(figsize=(10, 7))
 with torch.inference_mode():
     labels=np.array([])
     X_pca_list=[]
-    for i in range(10):
+    for i in range(5):
         for batch in train_loader:
             _, targets,captions = batch
             captions=captions.squeeze(1)
@@ -177,7 +177,7 @@ plt.show()
 fig.savefig("PCA_COCO.png")
 
 
-LossByBatchSize={}
+LossByBatchSizeCOCO={}
 #I want to show the minimum score by batch size by taking a random sample of the vectors...
 for batchsize in [2,4,8,16,32,64,128,256,512]:
     LossLabels=torch.arange(0,batchsize,device=optimumscore.device)
@@ -188,13 +188,14 @@ for batchsize in [2,4,8,16,32,64,128,256,512]:
         selection=selection/torch.norm(selection,dim=-1,keepdim=True)
         selection=selection@selection.T
         scores.append(Loss(selection,LossLabels).item())
-    LossByBatchSize.update({batchsize:np.mean(scores)})
+    LossByBatchSizeCOCO.update({batchsize:np.mean(scores)})
 
 
 #plot the loss by batch size
 #new plot
 plt.figure()
-plt.plot(list(LossByBatchSize.keys()),list(LossByBatchSize.values()))
+plt.plot(list(LossByBatchSize.keys()),list(LossByBatchSize.values()),labels="Classes")
+plt.plot(list(LossByBatchSizeCOCO.keys()),list(LossByBatchSizeCOCO.values()),labels="COCO Captions")
 plt.title('Minimum Expected Loss by Batch Size')
 #use log scale on X axis
 plt.xscale('log')
@@ -202,3 +203,12 @@ plt.xlabel('Batch Size')
 plt.ylabel('Loss')
 plt.show()
 plt.savefig("batchsize_loss.png")
+plt.figure()
+plt.plot(list(LossByBatchSize.keys()),list(LossByBatchSize.values()),labels="Classes")
+plt.plot(list(LossByBatchSizeCOCO.keys()),list(LossByBatchSizeCOCO.values()),labels="COCO Captions")
+plt.title('Minimum Expected Loss by Batch Size')
+#use log scale on X axis
+plt.xlabel('Batch Size')
+plt.ylabel('Loss')
+plt.show()
+plt.savefig("batchsize_losslin.png")

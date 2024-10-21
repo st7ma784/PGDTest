@@ -133,6 +133,15 @@ def SlurmRun(trialconfig):
                 'export TEMP=/nobackup/projects/bdlan05/$USER/',
                 'export NCCL_SOCKET_IFNAME=ib0'])
         comm="python3"
+    #check if we on the submittor node :
+    if str(os.getenv("HOSTNAME","localhost")).startswith("localhost"):
+        sub_commands.extend([
+                             '#SBATCH --mem=32G',
+                             '#SBATCH --cpus-per-task=8',
+                             'export CONDADIR=$CONDA_PREFIX_1',                                                     #<-----CHANGE ME
+                             'export WANDB_CACHE_DIR=/data', 
+                             'export TEMP=/data',
+                             'export ISHEC=False',])                                                 #<-----CHANGE ME])
     else:
 
         sub_commands.extend(['#SBATCH -p gpu-medium',
