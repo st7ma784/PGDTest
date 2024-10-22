@@ -144,3 +144,5 @@ train2017
 annotations
 annotations/*
 slurm_cmdtrial*
+*.sh
+*.out

@@ -153,6 +153,7 @@ fig = plt.figure(figsize=(10, 7))
 
 with torch.inference_mode():
     labels=np.array([])
+    representationslist=np.array()
     X_pca_list=[]
     for i in range(5):
         for batch in train_loader:
@@ -164,6 +165,7 @@ with torch.inference_mode():
             
             #extend the labels
             # print(X_pca)
+            representationslist=representationslist.concatenate(representationslist,representations.cpu().detach().numpy(),axis=0)
             X_pca_list.append( X_pca)
             labels=np.concatenate((labels,targets),axis=0)
     X_pca_list=np.concatenate(X_pca_list,axis=0)
@@ -180,14 +182,15 @@ fig.savefig("PCA_COCO.png")
 
 
 LossByBatchSizeCOCO={}
+representations=torch.tensor(representationslist)
 #I want to show the minimum score by batch size by taking a random sample of the vectors...
 X_pca_list=torch.tensor(X_pca_list)
 for batchsize in [2,4,8,16,32,64,128,256,512]:
     LossLabels=torch.arange(0,batchsize,device=optimumscore.device)
     scores=[]
-    for i in range(200):
+    for i in range(20000):
         randomindices=torch.randperm(optimumscore.shape[0])[:batchsize]
-        selection=X_pca_list[randomindices]
+        selection=representations[randomindices]
         selection=selection/torch.norm(selection,dim=-1,keepdim=True)
         selection=selection@selection.T
         scores.append(Loss(selection,LossLabels).item())
@@ -204,6 +207,8 @@ plt.title('Minimum Expected Loss by Batch Size')
 plt.xscale('log')
 plt.xlabel('Batch Size')
 plt.ylabel('Loss')
+plt.legend()
+
 plt.show()
 plt.savefig("batchsize_lossCOCO.png")
 
@@ -214,5 +219,6 @@ plt.title('Minimum Expected Loss by Batch Size')
 #use log scale on X axis
 plt.xlabel('Batch Size')
 plt.ylabel('Loss')
+plt.legend()
 plt.show()
 plt.savefig("linearbatchsize_lossCOCO.png")

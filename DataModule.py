@@ -146,12 +146,14 @@ class CustomtorchVisionDataset2(Dataset):
         self.dataset = dataset
         self.tokenized_texts = tokenized_text
         self.default_text=other_texts
+        # self.class_tallies={}
     def __len__(self):
         return len(self.dataset)
 
     def __getitem__(self, idx):
         image, label = self.dataset[idx]
         text=self.default_text
+        # self.class_tallies[label]=self.class_tallies.get(label,0)+1
         try:
 
             text = self.tokenized_texts[label] #A picture of {label}
