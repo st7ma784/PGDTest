@@ -982,6 +982,10 @@ class myLightningModule(LightningModule):
                 GoodLabels=np.concatenate(GoodLabels) if len(GoodLabels) > 1 else GoodLabels[0]
                 GoodLogits=np.concatenate(GoodLogits) if len(GoodLogits) > 1 else GoodLogits[0]
                 self.Cleanclassifier.fit(GoodLogits, GoodLabels)
+                #Log classifier weights and bias
+                self.log("Clean Classifier Weights Dataset {}".format(dataset_idx),self.Cleanclassifier.coef_)
+                self.log("Clean Classifier Bias Dataset {}".format(dataset_idx),self.Cleanclassifier.intercept_)
+
                 cleanscore=self.Cleanclassifier.score(GoodLogits, GoodLabels)
                 BadLabels=[]
                 BadLogits=[]
@@ -1026,7 +1030,12 @@ class myLightningModule(LightningModule):
                     BadLabels=np.concatenate(BadLabels) if len(BadLabels) > 1 else BadLabels[0]
                     BadLogits=np.concatenate(BadLogits) if len(BadLogits) > 1 else BadLogits[0]
                     self.Dirtyclassifier.fit(BadLogits, BadLabels)
+                    #Log classifier weights and bias
+                    self.log("Dirty Classifier Weights Dataset {}".format(dataset_idx),self.Dirtyclassifier.coef_)
+                    self.log("Dirty Classifier Bias Dataset {}".format(dataset_idx), self.Dirtyclassifier.intercept_)
                     self.generalclassifier.fit(np.concatenate([GoodLogits,BadLogits]), np.concatenate([GoodLabels,BadLabels]))
+                    self.log("General Classifier Weights Dataset {}".format(dataset_idx),self.generalclassifier.coef_)
+                    self.log("General Classifier Bias Dataset {}".format(dataset_idx), self.generalclassifier.intercept_)
                     self.log( "Test Clean Classifier on Dirty Features on dataset {} alpha {} epsilon {} step {}".format(dataset_idx,key[0],key[1],key[2]),self.Cleanclassifier.score(BadLogits, BadLabels))
                     self.log( "Test Dirty Classifier on Clean Features on dataset {} alpha {} epsilon {} step {}".format(dataset_idx,key[0],key[1],key[2]),self.Dirtyclassifier.score(GoodLogits, GoodLabels))
                     self.log( "Test Clean Classifier on Clean Features on dataset {} alpha {} epsilon {} step {}".format(dataset_idx,key[0],key[1],key[2]),cleanscore)
