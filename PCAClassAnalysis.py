@@ -14,24 +14,25 @@ with open(os.path.join(".","train_class_names.json"),'r') as f:
 Loss=torch.nn.CrossEntropyLoss()
 
 tokens={}
-model, preprocess = clip.load("ViT-B/32",device='cpu')
+model, preprocess = clip.load("ViT-B/32",device='cuda')
 with torch.inference_mode(True):
     for key in class_names.keys():
         names=class_names[key]
         print("datasets: ",key)
         print("names: ",names)
-        names=clip.tokenize(names)
-        tokens.update({key:model.encode_text(names)})
+        names=clip.tokenize(names).to('cuda')
+        tokens.update({key:model.encode_text(names).cpu()})
 
-fullpoints=torch.cat(tuple(list(tokens.values())),axis=0)
+fullpoints=torch.cat(tuple(list(tokens.values())),axis=0).to(torch.float)
 optimumscore=fullpoints/torch.norm(fullpoints,dim=-1,keepdim=True)
+optimumscore=optimumscore
 optimumscore=optimumscore@optimumscore.T
 ##plot this as a confusion matrix
 LossLabels=torch.arange(0,optimumscore.shape[0],device=optimumscore.device)
 loss=Loss(optimumscore,LossLabels)
 
 print("loss: ",loss)
-plt.matshow(optimumscore)
+plt.matshow(optimumscore.cpu().detach().numpy())
 plt.title('Confusion Matrix of Original Classes, optimal score is '+str(loss.item()))
 plt.savefig("confusion_matrix.png")
 
@@ -147,18 +148,19 @@ if not os.path.exists(os.path.join(".","data","annotations")):
                     print("Extracted: %s" % path)
         #now load the dataset
 train_dataset = CustomCOCODatasetWithClasses(os.path.join(".","data","train2017"), os.path.join(".","data","annotations","captions_train2017.json"),os.path.join(".","data","annotations","instances_train2017.json"), preprocess)
-train_loader = DataLoader(train_dataset, batch_size=64, shuffle=False, num_workers=4)
+train_loader = DataLoader(train_dataset, batch_size=64, shuffle=False, num_workers=8, prefetch_factor=3, persistent_workers=True)
 fig = plt.figure(figsize=(10, 7))
+
 with torch.inference_mode():
     labels=np.array([])
     X_pca_list=[]
-    for i in range(10):
+    for i in range(5):
         for batch in train_loader:
             _, targets,captions = batch
-            captions=captions.squeeze(1)
+            captions=captions.squeeze(1).to('cuda')
             representations = model.encode_text(captions)
             #do PCA on the representations
-            X_pca = pca.fit_transform(representations.detach().cpu().numpy())
+            X_pca = pca.transform(representations.cpu().numpy())
             
             #extend the labels
             # print(X_pca)
@@ -177,8 +179,9 @@ plt.show()
 fig.savefig("PCA_COCO.png")
 
 
-LossByBatchSize={}
+LossByBatchSizeCOCO={}
 #I want to show the minimum score by batch size by taking a random sample of the vectors...
+X_pca_list=torch.tensor(X_pca_list)
 for batchsize in [2,4,8,16,32,64,128,256,512]:
     LossLabels=torch.arange(0,batchsize,device=optimumscore.device)
     scores=[]
@@ -188,17 +191,28 @@ for batchsize in [2,4,8,16,32,64,128,256,512]:
         selection=selection/torch.norm(selection,dim=-1,keepdim=True)
         selection=selection@selection.T
         scores.append(Loss(selection,LossLabels).item())
-    LossByBatchSize.update({batchsize:np.mean(scores)})
+    LossByBatchSizeCOCO.update({batchsize:np.mean(scores)})
 
 
 #plot the loss by batch size
 #new plot
 plt.figure()
-plt.plot(list(LossByBatchSize.keys()),list(LossByBatchSize.values()))
+plt.plot(list(LossByBatchSize.keys()),list(LossByBatchSize.values()),label="Original Classes")
+plt.plot(list(LossByBatchSizeCOCO.keys()),list(LossByBatchSizeCOCO.values()),label="COCO Embeddings")
 plt.title('Minimum Expected Loss by Batch Size')
 #use log scale on X axis
 plt.xscale('log')
 plt.xlabel('Batch Size')
 plt.ylabel('Loss')
 plt.show()
-plt.savefig("batchsize_loss.png")
+plt.savefig("batchsize_lossCOCO.png")
+
+plt.figure()
+plt.plot(list(LossByBatchSize.keys()),list(LossByBatchSize.values()),label="Original Classes")
+plt.plot(list(LossByBatchSizeCOCO.keys()),list(LossByBatchSizeCOCO.values()),label="COCO Embeddings")
+plt.title('Minimum Expected Loss by Batch Size')
+#use log scale on X axis
+plt.xlabel('Batch Size')
+plt.ylabel('Loss')
+plt.show()
+plt.savefig("linearbatchsize_lossCOCO.png")

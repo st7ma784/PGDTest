@@ -1,0 +1,477 @@
+/var/lib/slurm-llnl/slurmd/job00004/slurm_script: line 21: module: command not found
+
+CommandNotFoundError: Your shell has not been properly configured to use 'conda activate'.
+To initialize your shell, run
+
+    $ conda init <SHELL_NAME>
+
+Currently supported shells are:
+  - bash
+  - fish
+  - tcsh
+  - xonsh
+  - zsh
+  - powershell
+
+See 'conda init --help' for more information and options.
+
+IMPORTANT: You may need to close and restart your shell after running 'conda init'.
+
+
+wandb: Currently logged in as: st7ma784 (PGNTeam). Use `wandb login --relogin` to force relogin
+wandb: Appending key for api.wandb.ai to your netrc file: /home/user/.netrc
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+IPU available: False, using: 0 IPUs
+HPU available: False, using: 0 HPUs
+/home/user/miniconda3/envs/open-ce/lib/python3.9/site-packages/pytorch_lightning/utilities/parsing.py:43: attribute 'trials' removed from hparams because it cannot be pickled
+/home/user/miniconda3/envs/open-ce/lib/python3.9/site-packages/pytorch_lightning/utilities/parsing.py:43: attribute 'optimize_parallel' removed from hparams because it cannot be pickled
+/home/user/miniconda3/envs/open-ce/lib/python3.9/site-packages/pytorch_lightning/utilities/parsing.py:43: attribute 'optimize_parallel_gpu' removed from hparams because it cannot be pickled
+/home/user/miniconda3/envs/open-ce/lib/python3.9/site-packages/pytorch_lightning/utilities/parsing.py:43: attribute 'optimize_parallel_cpu' removed from hparams because it cannot be pickled
+/home/user/miniconda3/envs/open-ce/lib/python3.9/site-packages/pytorch_lightning/utilities/parsing.py:43: attribute 'generate_trials' removed from hparams because it cannot be pickled
+/home/user/miniconda3/envs/open-ce/lib/python3.9/site-packages/pytorch_lightning/utilities/parsing.py:43: attribute 'optimize_trials_parallel_gpu' removed from hparams because it cannot be pickled
+{'save_freq': 50, 'test_freq': 3, 'weight_decay': 0.0, 'warmup': 0, 'momentum': 0.9, 'test_batch_size': 16, 'num_workers': 32, 'epochs': 8, 'learning_rate': 5e-05, 'batch_size': 96, 'precision': 32, 'train_eps': 0.00392156862745098, 'train_numsteps': 10, 'train_stepsize': 0.00392156862745098, 'test_eps': 0.00392156862745098, 'test_numsteps': 10, 'test_stepsize': 0.00392156862745098, 'earlystop': 1000, 'freeze_text': True, 'optimizer': 'adamw', 'labelType': 'image', 'root': './data', 'dataset': 'tinyImageNet', 'image_size': 224, 'attack_type': 'pgd', 'test_attack_type': 'pgd', 'seed': 0, 'model_dir': './save/models', 'output_dir': './results', 'filename': None, 'trial': 1, 'resume': None, 'evaluate': False, 'debug': False, 'model': 'clip', 'imagenet_root': './data', 'arch': 'vit_b32', 'method': 'null_patch', 'prompt_size': 30, 'add_prompt_size': 0, 'train_class_count': 90, 'last_num_ft': -1, 'noimginprop': False, 'num_trials': 0, 'name': 'TestRun', 'hpc_exp_number': None, 'trials': <bound method HyperOptArgumentParser.opt_trials of parser(prog='Launch.py', usage=None, description=None, formatter_class=<class 'argparse.HelpFormatter'>, conflict_handler='error', add_help=False)>, 'optimize_parallel': <bound method HyperOptArgumentParser.optimize_parallel of parser(prog='Launch.py', usage=None, description=None, formatter_class=<class 'argparse.HelpFormatter'>, conflict_handler='error', add_help=False)>, 'optimize_parallel_gpu': <bound method HyperOptArgumentParser.optimize_parallel_gpu of parser(prog='Launch.py', usage=None, description=None, formatter_class=<class 'argparse.HelpFormatter'>, conflict_handler='error', add_help=False)>, 'optimize_parallel_cpu': <bound method HyperOptArgumentParser.optimize_parallel_cpu of parser(prog='Launch.py', usage=None, description=None, formatter_class=<class 'argparse.HelpFormatter'>, conflict_handler='error', add_help=False)>, 'generate_trials': <bound method HyperOptArgumentParser.generate_trials of parser(prog='Launch.py', usage=None, description=None, formatter_class=<class 'argparse.HelpFormatter'>, conflict_handler='error', add_help=False)>, 'optimize_trials_parallel_gpu': <bound method HyperOptArgumentParser.optimize_trials_parallel_gpu of parser(prog='Launch.py', usage=None, description=None, formatter_class=<class 'argparse.HelpFormatter'>, conflict_handler='error', add_help=False)>}
+Version is:  tinyImageNet_image_5e-05_96_0.00392156862745098_10_0.00392156862745098_0.00392156862745098_pgd_30_0_adamw_True
+Launching with precision 32
+Files already downloaded and verified
+Files already downloaded and verified
+Files already downloaded and verified
+Files already downloaded and verified
+Files already downloaded and verified
+Files already downloaded and verified
+Class name n01443537 not found in imagenet_classes_names.txt
+Class name n01629819 not found in imagenet_classes_names.txt
+Class name n01641577 not found in imagenet_classes_names.txt
+Class name n01644900 not found in imagenet_classes_names.txt
+Class name n01698640 not found in imagenet_classes_names.txt
+Class name n01742172 not found in imagenet_classes_names.txt
+Class name n01768244 not found in imagenet_classes_names.txt
+Class name n01770393 not found in imagenet_classes_names.txt
+Class name n01774384 not found in imagenet_classes_names.txt
+Class name n01774750 not found in imagenet_classes_names.txt
+Class name n01784675 not found in imagenet_classes_names.txt
+Class name n01855672 not found in imagenet_classes_names.txt
+Class name n01882714 not found in imagenet_classes_names.txt
+Class name n01910747 not found in imagenet_classes_names.txt
+Class name n01917289 not found in imagenet_classes_names.txt
+Class name n01944390 not found in imagenet_classes_names.txt
+Class name n01945685 not found in imagenet_classes_names.txt
+Class name n01950731 not found in imagenet_classes_names.txt
+Class name n01983481 not found in imagenet_classes_names.txt
+Class name n01984695 not found in imagenet_classes_names.txt
+Class name n02002724 not found in imagenet_classes_names.txt
+Class name n02056570 not found in imagenet_classes_names.txt
+Class name n02058221 not found in imagenet_classes_names.txt
+Class name n02074367 not found in imagenet_classes_names.txt
+Class name n02085620 not found in imagenet_classes_names.txt
+Class name n02094433 not found in imagenet_classes_names.txt
+Class name n02099601 not found in imagenet_classes_names.txt
+Class name n02099712 not found in imagenet_classes_names.txt
+Class name n02106662 not found in imagenet_classes_names.txt
+Class name n02113799 not found in imagenet_classes_names.txt
+Class name n02123045 not found in imagenet_classes_names.txt
+Class name n02123394 not found in imagenet_classes_names.txt
+Class name n02124075 not found in imagenet_classes_names.txt
+Class name n02125311 not found in imagenet_classes_names.txt
+Class name n02129165 not found in imagenet_classes_names.txt
+Class name n02132136 not found in imagenet_classes_names.txt
+Class name n02165456 not found in imagenet_classes_names.txt
+Class name n02190166 not found in imagenet_classes_names.txt
+Class name n02206856 not found in imagenet_classes_names.txt
+Class name n02226429 not found in imagenet_classes_names.txt
+Class name n02231487 not found in imagenet_classes_names.txt
+Class name n02233338 not found in imagenet_classes_names.txt
+Class name n02236044 not found in imagenet_classes_names.txt
+Class name n02268443 not found in imagenet_classes_names.txt
+Class name n02279972 not found in imagenet_classes_names.txt
+Class name n02281406 not found in imagenet_classes_names.txt
+Class name n02321529 not found in imagenet_classes_names.txt
+Class name n02364673 not found in imagenet_classes_names.txt
+Class name n02395406 not found in imagenet_classes_names.txt
+Class name n02403003 not found in imagenet_classes_names.txt
+Class name n02410509 not found in imagenet_classes_names.txt
+Class name n02415577 not found in imagenet_classes_names.txt
+Class name n02423022 not found in imagenet_classes_names.txt
+Class name n02437312 not found in imagenet_classes_names.txt
+Class name n02480495 not found in imagenet_classes_names.txt
+Class name n02481823 not found in imagenet_classes_names.txt
+Class name n02486410 not found in imagenet_classes_names.txt
+Class name n02504458 not found in imagenet_classes_names.txt
+Class name n02509815 not found in imagenet_classes_names.txt
+Class name n02666196 not found in imagenet_classes_names.txt
+Class name n02669723 not found in imagenet_classes_names.txt
+Class name n02699494 not found in imagenet_classes_names.txt
+Class name n02730930 not found in imagenet_classes_names.txt
+Class name n02769748 not found in imagenet_classes_names.txt
+Class name n02788148 not found in imagenet_classes_names.txt
+Class name n02791270 not found in imagenet_classes_names.txt
+Class name n02793495 not found in imagenet_classes_names.txt
+Class name n02795169 not found in imagenet_classes_names.txt
+Class name n02802426 not found in imagenet_classes_names.txt
+Class name n02808440 not found in imagenet_classes_names.txt
+Class name n02814533 not found in imagenet_classes_names.txt
+Class name n02814860 not found in imagenet_classes_names.txt
+Class name n02815834 not found in imagenet_classes_names.txt
+Class name n02823428 not found in imagenet_classes_names.txt
+Class name n02837789 not found in imagenet_classes_names.txt
+Class name n02841315 not found in imagenet_classes_names.txt
+Class name n02843684 not found in imagenet_classes_names.txt
+Class name n02883205 not found in imagenet_classes_names.txt
+Class name n02892201 not found in imagenet_classes_names.txt
+Class name n02906734 not found in imagenet_classes_names.txt
+Class name n02909870 not found in imagenet_classes_names.txt
+Class name n02917067 not found in imagenet_classes_names.txt
+Class name n02927161 not found in imagenet_classes_names.txt
+Class name n02948072 not found in imagenet_classes_names.txt
+Class name n02950826 not found in imagenet_classes_names.txt
+Class name n02963159 not found in imagenet_classes_names.txt
+Class name n02977058 not found in imagenet_classes_names.txt
+Class name n02988304 not found in imagenet_classes_names.txt
+Class name n02999410 not found in imagenet_classes_names.txt
+wandb: Currently logged in as: st7ma784. Use `wandb login --relogin` to force relogin
+wandb: wandb version 0.18.5 is available!  To upgrade, please run:
+wandb:  $ pip install wandb --upgrade
+wandb: Tracking run with wandb version 0.16.2
+wandb: Run data is saved locally in /data/wandb/run-20241021_144433-pmilrnwx
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Syncing run effortless-dew-280
+wandb: ⭐️ View project at https://wandb.ai/st7ma784/AllDataPGN
+wandb: 🚀 View run at https://wandb.ai/st7ma784/AllDataPGN/runs/pmilrnwx
+Class name n03014705 not found in imagenet_classes_names.txt
+Class name n03026506 not found in imagenet_classes_names.txt
+Class name n03042490 not found in imagenet_classes_names.txt
+Class name n03085013 not found in imagenet_classes_names.txt
+Class name n03089624 not found in imagenet_classes_names.txt
+Class name n03100240 not found in imagenet_classes_names.txt
+Class name n03126707 not found in imagenet_classes_names.txt
+Class name n03160309 not found in imagenet_classes_names.txt
+Class name n03179701 not found in imagenet_classes_names.txt
+Class name n03201208 not found in imagenet_classes_names.txt
+Class name n03250847 not found in imagenet_classes_names.txt
+Class name n03255030 not found in imagenet_classes_names.txt
+Class name n03355925 not found in imagenet_classes_names.txt
+Class name n03388043 not found in imagenet_classes_names.txt
+Class name n03393912 not found in imagenet_classes_names.txt
+Class name n03400231 not found in imagenet_classes_names.txt
+Class name n03404251 not found in imagenet_classes_names.txt
+Class name n03424325 not found in imagenet_classes_names.txt
+Class name n03444034 not found in imagenet_classes_names.txt
+Class name n03447447 not found in imagenet_classes_names.txt
+Class name n03544143 not found in imagenet_classes_names.txt
+Class name n03584254 not found in imagenet_classes_names.txt
+Class name n03599486 not found in imagenet_classes_names.txt
+Class name n03617480 not found in imagenet_classes_names.txt
+Class name n03637318 not found in imagenet_classes_names.txt
+Class name n03649909 not found in imagenet_classes_names.txt
+Class name n03662601 not found in imagenet_classes_names.txt
+Class name n03670208 not found in imagenet_classes_names.txt
+Class name n03706229 not found in imagenet_classes_names.txt
+Class name n03733131 not found in imagenet_classes_names.txt
+Class name n03763968 not found in imagenet_classes_names.txt
+Class name n03770439 not found in imagenet_classes_names.txt
+Class name n03796401 not found in imagenet_classes_names.txt
+Class name n03804744 not found in imagenet_classes_names.txt
+Class name n03814639 not found in imagenet_classes_names.txt
+Class name n03837869 not found in imagenet_classes_names.txt
+Class name n03838899 not found in imagenet_classes_names.txt
+Class name n03854065 not found in imagenet_classes_names.txt
+Class name n03891332 not found in imagenet_classes_names.txt
+Class name n03902125 not found in imagenet_classes_names.txt
+Class name n03930313 not found in imagenet_classes_names.txt
+Class name n03937543 not found in imagenet_classes_names.txt
+Class name n03970156 not found in imagenet_classes_names.txt
+Class name n03976657 not found in imagenet_classes_names.txt
+Class name n03977966 not found in imagenet_classes_names.txt
+Class name n03980874 not found in imagenet_classes_names.txt
+Class name n03983396 not found in imagenet_classes_names.txt
+Class name n03992509 not found in imagenet_classes_names.txt
+Class name n04008634 not found in imagenet_classes_names.txt
+Class name n04023962 not found in imagenet_classes_names.txt
+Class name n04067472 not found in imagenet_classes_names.txt
+Class name n04070727 not found in imagenet_classes_names.txt
+Class name n04074963 not found in imagenet_classes_names.txt
+Class name n04099969 not found in imagenet_classes_names.txt
+Class name n04118538 not found in imagenet_classes_names.txt
+Class name n04133789 not found in imagenet_classes_names.txt
+Class name n04146614 not found in imagenet_classes_names.txt
+Class name n04149813 not found in imagenet_classes_names.txt
+Class name n04179913 not found in imagenet_classes_names.txt
+Class name n04251144 not found in imagenet_classes_names.txt
+Class name n04254777 not found in imagenet_classes_names.txt
+Class name n04259630 not found in imagenet_classes_names.txt
+Class name n04265275 not found in imagenet_classes_names.txt
+Class name n04275548 not found in imagenet_classes_names.txt
+Class name n04285008 not found in imagenet_classes_names.txt
+Class name n04311004 not found in imagenet_classes_names.txt
+Class name n04328186 not found in imagenet_classes_names.txt
+Class name n04356056 not found in imagenet_classes_names.txt
+Class name n04366367 not found in imagenet_classes_names.txt
+Class name n04371430 not found in imagenet_classes_names.txt
+Class name n04376876 not found in imagenet_classes_names.txt
+Class name n04398044 not found in imagenet_classes_names.txt
+Class name n04399382 not found in imagenet_classes_names.txt
+Class name n04417672 not found in imagenet_classes_names.txt
+Class name n04456115 not found in imagenet_classes_names.txt
+Class name n04465501 not found in imagenet_classes_names.txt
+Class name n04486054 not found in imagenet_classes_names.txt
+Class name n04487081 not found in imagenet_classes_names.txt
+Class name n04501370 not found in imagenet_classes_names.txt
+Class name n04507155 not found in imagenet_classes_names.txt
+Class name n04532106 not found in imagenet_classes_names.txt
+Class name n04532670 not found in imagenet_classes_names.txt
+Class name n04540053 not found in imagenet_classes_names.txt
+Class name n04560804 not found in imagenet_classes_names.txt
+Class name n04562935 not found in imagenet_classes_names.txt
+Class name n04596742 not found in imagenet_classes_names.txt
+Class name n04597913 not found in imagenet_classes_names.txt
+Class name n06596364 not found in imagenet_classes_names.txt
+Class name n07579787 not found in imagenet_classes_names.txt
+Class name n07583066 not found in imagenet_classes_names.txt
+Class name n07614500 not found in imagenet_classes_names.txt
+Class name n07615774 not found in imagenet_classes_names.txt
+Class name n07695742 not found in imagenet_classes_names.txt
+Class name n07711569 not found in imagenet_classes_names.txt
+Class name n07715103 not found in imagenet_classes_names.txt
+Class name n07720875 not found in imagenet_classes_names.txt
+Class name n07734744 not found in imagenet_classes_names.txt
+Class name n07747607 not found in imagenet_classes_names.txt
+Class name n07749582 not found in imagenet_classes_names.txt
+Class name n07753592 not found in imagenet_classes_names.txt
+Class name n07768694 not found in imagenet_classes_names.txt
+Class name n07871810 not found in imagenet_classes_names.txt
+Class name n07873807 not found in imagenet_classes_names.txt
+Class name n07875152 not found in imagenet_classes_names.txt
+Class name n07920052 not found in imagenet_classes_names.txt
+Class name n09193705 not found in imagenet_classes_names.txt
+Class name n09246464 not found in imagenet_classes_names.txt
+Class name n09256479 not found in imagenet_classes_names.txt
+Class name n09332890 not found in imagenet_classes_names.txt
+Class name n09428293 not found in imagenet_classes_names.txt
+Class name n12267677 not found in imagenet_classes_names.txt
+Names for each dataset
+['0, cifar10', '1, cifar100', '2, STL10', '3, SUN397', '4, Food101', '5, dtd', '6, fgvc_aircraft', '7, tinyImageNet']
+Class name n01443537 not found in imagenet_classes_names.txt
+Class name n01629819 not found in imagenet_classes_names.txt
+Class name n01641577 not found in imagenet_classes_names.txt
+Class name n01644900 not found in imagenet_classes_names.txt
+Class name n01698640 not found in imagenet_classes_names.txt
+Class name n01742172 not found in imagenet_classes_names.txt
+Class name n01768244 not found in imagenet_classes_names.txt
+Class name n01770393 not found in imagenet_classes_names.txt
+Class name n01774384 not found in imagenet_classes_names.txt
+Class name n01774750 not found in imagenet_classes_names.txt
+Class name n01784675 not found in imagenet_classes_names.txt
+Class name n01855672 not found in imagenet_classes_names.txt
+Class name n01882714 not found in imagenet_classes_names.txt
+Class name n01910747 not found in imagenet_classes_names.txt
+Class name n01917289 not found in imagenet_classes_names.txt
+Class name n01944390 not found in imagenet_classes_names.txt
+Class name n01945685 not found in imagenet_classes_names.txt
+Class name n01950731 not found in imagenet_classes_names.txt
+Class name n01983481 not found in imagenet_classes_names.txt
+Class name n01984695 not found in imagenet_classes_names.txt
+Class name n02002724 not found in imagenet_classes_names.txt
+Class name n02056570 not found in imagenet_classes_names.txt
+Class name n02058221 not found in imagenet_classes_names.txt
+Class name n02074367 not found in imagenet_classes_names.txt
+Class name n02085620 not found in imagenet_classes_names.txt
+Class name n02094433 not found in imagenet_classes_names.txt
+Class name n02099601 not found in imagenet_classes_names.txt
+Class name n02099712 not found in imagenet_classes_names.txt
+Class name n02106662 not found in imagenet_classes_names.txt
+Class name n02113799 not found in imagenet_classes_names.txt
+Class name n02123045 not found in imagenet_classes_names.txt
+Class name n02123394 not found in imagenet_classes_names.txt
+Class name n02124075 not found in imagenet_classes_names.txt
+Class name n02125311 not found in imagenet_classes_names.txt
+Class name n02129165 not found in imagenet_classes_names.txt
+Class name n02132136 not found in imagenet_classes_names.txt
+Class name n02165456 not found in imagenet_classes_names.txt
+Class name n02190166 not found in imagenet_classes_names.txt
+Class name n02206856 not found in imagenet_classes_names.txt
+Class name n02226429 not found in imagenet_classes_names.txt
+Class name n02231487 not found in imagenet_classes_names.txt
+Class name n02233338 not found in imagenet_classes_names.txt
+Class name n02236044 not found in imagenet_classes_names.txt
+Class name n02268443 not found in imagenet_classes_names.txt
+Class name n02279972 not found in imagenet_classes_names.txt
+Class name n02281406 not found in imagenet_classes_names.txt
+Class name n02321529 not found in imagenet_classes_names.txt
+Class name n02364673 not found in imagenet_classes_names.txt
+Class name n02395406 not found in imagenet_classes_names.txt
+Class name n02403003 not found in imagenet_classes_names.txt
+Class name n02410509 not found in imagenet_classes_names.txt
+Class name n02415577 not found in imagenet_classes_names.txt
+Class name n02423022 not found in imagenet_classes_names.txt
+Class name n02437312 not found in imagenet_classes_names.txt
+Class name n02480495 not found in imagenet_classes_names.txt
+Class name n02481823 not found in imagenet_classes_names.txt
+Class name n02486410 not found in imagenet_classes_names.txt
+Class name n02504458 not found in imagenet_classes_names.txt
+Class name n02509815 not found in imagenet_classes_names.txt
+Class name n02666196 not found in imagenet_classes_names.txt
+Class name n02669723 not found in imagenet_classes_names.txt
+Class name n02699494 not found in imagenet_classes_names.txt
+Class name n02730930 not found in imagenet_classes_names.txt
+Class name n02769748 not found in imagenet_classes_names.txt
+Class name n02788148 not found in imagenet_classes_names.txt
+Class name n02791270 not found in imagenet_classes_names.txt
+Class name n02793495 not found in imagenet_classes_names.txt
+Class name n02795169 not found in imagenet_classes_names.txt
+Class name n02802426 not found in imagenet_classes_names.txt
+Class name n02808440 not found in imagenet_classes_names.txt
+Class name n02814533 not found in imagenet_classes_names.txt
+Class name n02814860 not found in imagenet_classes_names.txt
+Class name n02815834 not found in imagenet_classes_names.txt
+Class name n02823428 not found in imagenet_classes_names.txt
+Class name n02837789 not found in imagenet_classes_names.txt
+Class name n02841315 not found in imagenet_classes_names.txt
+Class name n02843684 not found in imagenet_classes_names.txt
+Class name n02883205 not found in imagenet_classes_names.txt
+Class name n02892201 not found in imagenet_classes_names.txt
+Class name n02906734 not found in imagenet_classes_names.txt
+Class name n02909870 not found in imagenet_classes_names.txt
+Class name n02917067 not found in imagenet_classes_names.txt
+Class name n02927161 not found in imagenet_classes_names.txt
+Class name n02948072 not found in imagenet_classes_names.txt
+Class name n02950826 not found in imagenet_classes_names.txt
+Class name n02963159 not found in imagenet_classes_names.txt
+Class name n02977058 not found in imagenet_classes_names.txt
+Class name n02988304 not found in imagenet_classes_names.txt
+Class name n02999410 not found in imagenet_classes_names.txt
+Class name n03014705 not found in imagenet_classes_names.txt
+Class name n03026506 not found in imagenet_classes_names.txt
+Class name n03042490 not found in imagenet_classes_names.txt
+Class name n03085013 not found in imagenet_classes_names.txt
+Class name n03089624 not found in imagenet_classes_names.txt
+Class name n03100240 not found in imagenet_classes_names.txt
+Class name n03126707 not found in imagenet_classes_names.txt
+Class name n03160309 not found in imagenet_classes_names.txt
+Class name n03179701 not found in imagenet_classes_names.txt
+Class name n03201208 not found in imagenet_classes_names.txt
+Class name n03250847 not found in imagenet_classes_names.txt
+Class name n03255030 not found in imagenet_classes_names.txt
+Class name n03355925 not found in imagenet_classes_names.txt
+Class name n03388043 not found in imagenet_classes_names.txt
+Class name n03393912 not found in imagenet_classes_names.txt
+Class name n03400231 not found in imagenet_classes_names.txt
+Class name n03404251 not found in imagenet_classes_names.txt
+Class name n03424325 not found in imagenet_classes_names.txt
+Class name n03444034 not found in imagenet_classes_names.txt
+Class name n03447447 not found in imagenet_classes_names.txt
+Class name n03544143 not found in imagenet_classes_names.txt
+Class name n03584254 not found in imagenet_classes_names.txt
+Class name n03599486 not found in imagenet_classes_names.txt
+Class name n03617480 not found in imagenet_classes_names.txt
+Class name n03637318 not found in imagenet_classes_names.txt
+Class name n03649909 not found in imagenet_classes_names.txt
+Class name n03662601 not found in imagenet_classes_names.txt
+Class name n03670208 not found in imagenet_classes_names.txt
+Class name n03706229 not found in imagenet_classes_names.txt
+Class name n03733131 not found in imagenet_classes_names.txt
+Class name n03763968 not found in imagenet_classes_names.txt
+Class name n03770439 not found in imagenet_classes_names.txt
+Class name n03796401 not found in imagenet_classes_names.txt
+Class name n03804744 not found in imagenet_classes_names.txt
+Class name n03814639 not found in imagenet_classes_names.txt
+Class name n03837869 not found in imagenet_classes_names.txt
+Class name n03838899 not found in imagenet_classes_names.txt
+Class name n03854065 not found in imagenet_classes_names.txt
+Class name n03891332 not found in imagenet_classes_names.txt
+Class name n03902125 not found in imagenet_classes_names.txt
+Class name n03930313 not found in imagenet_classes_names.txt
+Class name n03937543 not found in imagenet_classes_names.txt
+Class name n03970156 not found in imagenet_classes_names.txt
+Class name n03976657 not found in imagenet_classes_names.txt
+Class name n03977966 not found in imagenet_classes_names.txt
+Class name n03980874 not found in imagenet_classes_names.txt
+Class name n03983396 not found in imagenet_classes_names.txt
+Class name n03992509 not found in imagenet_classes_names.txt
+Class name n04008634 not found in imagenet_classes_names.txt
+Class name n04023962 not found in imagenet_classes_names.txt
+Class name n04067472 not found in imagenet_classes_names.txt
+Class name n04070727 not found in imagenet_classes_names.txt
+Class name n04074963 not found in imagenet_classes_names.txt
+Class name n04099969 not found in imagenet_classes_names.txt
+Class name n04118538 not found in imagenet_classes_names.txt
+Class name n04133789 not found in imagenet_classes_names.txt
+Class name n04146614 not found in imagenet_classes_names.txt
+Class name n04149813 not found in imagenet_classes_names.txt
+Class name n04179913 not found in imagenet_classes_names.txt
+Class name n04251144 not found in imagenet_classes_names.txt
+Class name n04254777 not found in imagenet_classes_names.txt
+Class name n04259630 not found in imagenet_classes_names.txt
+Class name n04265275 not found in imagenet_classes_names.txt
+Class name n04275548 not found in imagenet_classes_names.txt
+Class name n04285008 not found in imagenet_classes_names.txt
+Class name n04311004 not found in imagenet_classes_names.txt
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [2]
+
+  | Name           | Type             | Params
+----------------------------------------------------
+0 | loss           | CrossEntropyLoss | 0     
+1 | model          | CLIP             | 151 M 
+2 | model_ori      | CLIP             | 151 M 
+3 | prompter       | NullPrompter     | 0     
+4 | add_prompter   | TokenPrompter    | 0     
+5 | criterion      | CrossEntropyLoss | 0     
+6 | test_criterion | CrossEntropyLoss | 0     
+7 | criterion_kl   | KLDivLoss        | 0     
+----------------------------------------------------
+151 M     Trainable params
+151 M     Non-trainable params
+302 M     Total params
+1,210.219 Total estimated model params size (MB)
+SLURM auto-requeueing enabled. Setting signal handlers.
+Class name n04328186 not found in imagenet_classes_names.txt
+Class name n04356056 not found in imagenet_classes_names.txt
+Class name n04366367 not found in imagenet_classes_names.txt
+Class name n04371430 not found in imagenet_classes_names.txt
+Class name n04376876 not found in imagenet_classes_names.txt
+Class name n04398044 not found in imagenet_classes_names.txt
+Class name n04399382 not found in imagenet_classes_names.txt
+Class name n04417672 not found in imagenet_classes_names.txt
+Class name n04456115 not found in imagenet_classes_names.txt
+Class name n04465501 not found in imagenet_classes_names.txt
+Class name n04486054 not found in imagenet_classes_names.txt
+Class name n04487081 not found in imagenet_classes_names.txt
+Class name n04501370 not found in imagenet_classes_names.txt
+Class name n04507155 not found in imagenet_classes_names.txt
+Class name n04532106 not found in imagenet_classes_names.txt
+Class name n04532670 not found in imagenet_classes_names.txt
+Class name n04540053 not found in imagenet_classes_names.txt
+Class name n04560804 not found in imagenet_classes_names.txt
+Class name n04562935 not found in imagenet_classes_names.txt
+Class name n04596742 not found in imagenet_classes_names.txt
+Class name n04597913 not found in imagenet_classes_names.txt
+Class name n06596364 not found in imagenet_classes_names.txt
+Class name n07579787 not found in imagenet_classes_names.txt
+Class name n07583066 not found in imagenet_classes_names.txt
+Class name n07614500 not found in imagenet_classes_names.txt
+Class name n07615774 not found in imagenet_classes_names.txt
+Class name n07695742 not found in imagenet_classes_names.txt
+Class name n07711569 not found in imagenet_classes_names.txt
+Class name n07715103 not found in imagenet_classes_names.txt
+Class name n07720875 not found in imagenet_classes_names.txt
+Class name n07734744 not found in imagenet_classes_names.txt
+Class name n07747607 not found in imagenet_classes_names.txt
+Class name n07749582 not found in imagenet_classes_names.txt
+Class name n07753592 not found in imagenet_classes_names.txt
+Class name n07768694 not found in imagenet_classes_names.txt
+Class name n07871810 not found in imagenet_classes_names.txt
+Class name n07873807 not found in imagenet_classes_names.txt
+Class name n07875152 not found in imagenet_classes_names.txt
+Class name n07920052 not found in imagenet_classes_names.txt
+Class name n09193705 not found in imagenet_classes_names.txt
+Class name n09246464 not found in imagenet_classes_names.txt
+Class name n09256479 not found in imagenet_classes_names.txt
+Class name n09332890 not found in imagenet_classes_names.txt
+Class name n09428293 not found in imagenet_classes_names.txt
+Class name n12267677 not found in imagenet_classes_names.txt
+Names for each dataset
+['0, cifar10', '1, cifar100', '2, STL10', '3, SUN397', '4, Food101', '5, dtd', '6, fgvc_aircraft', '7, tinyImageNet']
+/home/user/miniconda3/envs/open-ce/lib/python3.9/site-packages/pytorch_lightning/trainer/connectors/data_connector.py:492: Your `val_dataloader`'s sampler has shuffling enabled, it is strongly recommended that you turn shuffling off for val/test dataloaders.
+/home/user/miniconda3/envs/open-ce/lib/python3.9/site-packages/pytorch_lightning/utilities/data.py:104: Total length of `DataLoader` across ranks is zero. Please make sure this was your intention.
+wandb: ERROR Error while calling W&B API: context deadline exceeded (<Response [500]>)
+wandb: ERROR Error while calling W&B API: context deadline exceeded (<Response [500]>)
+wandb: ERROR Error while calling W&B API: context deadline exceeded (<Response [500]>)
