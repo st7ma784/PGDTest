@@ -153,7 +153,7 @@ fig = plt.figure(figsize=(10, 7))
 
 with torch.inference_mode():
     labels=np.array([])
-    representationslist=np.array()
+    representationslist=np.array([])
     X_pca_list=[]
     for i in range(5):
         for batch in train_loader:
