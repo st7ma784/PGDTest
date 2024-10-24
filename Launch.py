@@ -1,7 +1,7 @@
 
 import os,sys
 import pytorch_lightning
-from pytorch_lightning.callbacks import TQDMProgressBar,EarlyStopping
+from pytorch_lightning.callbacks import TQDMProgressBar,EarlyStopping, ModelCheckpoint
 import datetime
 from pytorch_lightning.plugins.environments import SLURMEnvironment
 from models.trainPGD import myLightningModule
@@ -30,10 +30,12 @@ def train(config={
         accelerator=config.get("accelerator","auto")
     # print("Training with config: {}".format(config))
     Dataset.batch_size=config["batch_size"]
+    filename="model-{epoch:02d}-{val_loss:.2f}-{model.version}.ckpt"
     callbacks=[
         TQDMProgressBar(),
         #EarlyStopping(monitor="train_loss", mode="min",patience=10,check_finite=True,stopping_threshold=0.001),
-    ]
+        ModelCheckpoint(monitor="train_loss", mode="min",dirpath=dir,filename=filename,save_top_k=1,save_last=True,save_weights_only=True),
+        ]
     p=config['precision']
     if isinstance(p,str):
         p=16 if p=="bf16" else int(p)  ##needed for BEDE
@@ -67,10 +69,12 @@ def train(config={
             precision=p,
             fast_dev_run=config.get("debug",False),
     )
-
-    trainer.fit(model,Dataset)
-
-    trainer.test(model,Dataset)
+    if not os.path.exists(os.path.join(dir,filename)):
+        
+        trainer.fit(model,Dataset)
+    else:
+        model.load_from_checkpoint(os.path.join(dir,filename))
+        trainer.test(model,Dataset)
 #### This is a wrapper to make sure we log with Weights and Biases, You'll need your own user for this.
 def wandbtrain(config=None,dir=None,devices=None,accelerator=None,Dataset=None):
 
@@ -157,8 +161,7 @@ def SlurmRun(trialconfig):
     sub_commands.extend([
         'export SLURM_NNODES=$SLURM_JOB_NUM_NODES',
         'export wandb=9cf7e97e2460c18a89429deed624ec1cbfb537bc',
-        'export WANDB_API_KEY=9cf7e97e2460c18a89429deed624ec1cbfb537bc',
-                                                                                       #<-----CHANGE ME                                         
+        'export WANDB_API_KEY=9cf7e97e2460c18a89429deed624ec1cbfb537bc',                                                              #<-----CHANGE ME                                         
         'source /etc/profile',
         'module add opence',
         'conda activate $CONDADIR',
@@ -247,8 +250,18 @@ if __name__ == '__main__':
             with open(slurm_cmd_script_path, "w") as f:
                 f.write(command)
             print('\nlaunching exp...')
+
+            
+            
             result = call('{} {}'.format("sbatch", slurm_cmd_script_path), shell=True)
             if result == 0:
                 print('launched exp ', slurm_cmd_script_path)
+                
+                #copy the file to a new folder with name time 2 days from now
+                TIMETORUN=(datetime.datetime.now()+datetime.timedelta(days=3)).strftime("%Y-%m-%d")
+                os.makedirs(os.path.join(defaultConfig.get("dir","."),"slurm_scripts","RunAfter{}".format(TIMETORUN)),exist_ok=True)
+                os.rename(slurm_cmd_script_path,os.path.join(defaultConfig.get("dir","."),"slurm_scripts","RunAfter{}".format(TIMETORUN),"EVAL"+slurm_cmd_script_path.split("/")[-1]))
+
+            
             else:
                 print('launch failed...')
