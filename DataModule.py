@@ -421,7 +421,9 @@ class MyDataModule(pl.LightningDataModule):
                 val_dataset_dict.update({'STL10': STL10(root=self.imagenet_root, split='test', transform=self.preprocess, download=download)})
                    
             if 'SUN397' in self.val_dataset_names:
-                val_dataset_dict.update({'SUN397': SUN397(root=self.imagenet_root, transform=self.preprocess, download=download)})
+                data= SUN397(root=self.imagenet_root, transform=self.preprocess, download=download)
+                val,test=torch.utils.data.random_split(data,[int(0.7*len(data)),len(data)-int(0.7*len(data))])
+                val_dataset_dict.update({'SUN397':test})
                     # val_dataset_list.append(SUN397(root=self.imagenet_root,
                     #                                 transform=preprocess224, download=True))
             # if 'StanfordCars' in self.val_dataset_names:                                                   #no longer available for download
