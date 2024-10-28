@@ -159,7 +159,7 @@ class CustomtorchVisionDataset2(Dataset):
             text = self.tokenized_texts[label] #A picture of {label}
             #print("text:",text.shape)
         except:
-            print("Error in getting text")
+            print("Error in getting text in {}".format(self.dataset))
             print("label:",label)
             print("len of dataset:",len(self.dataset))
             print("len of texts:",len(self.tokenized_texts))
@@ -220,7 +220,7 @@ class MyDataModule(pl.LightningDataModule):
             tokens = self.tokenizer(class_names[i])
             class_tokens.append(tokens)
         return class_tokens
-    def setup(self, stage=None,download=False):
+    def setup(self, stage=None,download=True):
 
         if stage == 'fit' or stage is None:
             self.train_dataset_dict={}
