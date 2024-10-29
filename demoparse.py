@@ -13,7 +13,7 @@ class baseparser(HyperOptArgumentParser):
         self.opt_list("--weight_decay", default=0, type=float, tunable=False)
         self.opt_list("--warmup", default=0,options=[0,100,1000], type=int, tunable=False)
         self.opt_list("--momentum", default=0.9, type=float, tunable=False)
-        self.opt_list("--test_batch_size", default=16, type=int, tunable=False)
+        self.opt_list("--test_batch_size", default=8, type=int, tunable=False)
         self.opt_list("--num_workers", default=32, type=int, tunable=False)
         self.opt_list("--epochs", default=8, type=int, tunable=False)
         self.opt_list("--learning_rate", default=5e-4, options=[5e-5,5e-4,1e-4], type=float, tunable=True) #originally 5e-5
