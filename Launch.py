@@ -12,18 +12,18 @@ from models.trainPGD import myLightningModule
 def train(config={
         "batch_size":16, # ADD MODEL ARGS HERE
          "codeversion":"-1",
-    },dir=None,devices=None,accelerator=None,Dataset=None,logtool=None):
+    },dire=None,devices=None,accelerator=None,Dataset=None,logtool=None):
 
 
     model=myLightningModule(**config)
-    if dir is None:
-        dir=config.get("root",".")
+    if dire is None:
+        dire=config.get("root",".")
     if config.get("dataset",None)!= 'coco':
         from DataModule import MyDataModule
-        Dataset=MyDataModule(Cache_dir=dir,**config)
+        Dataset=MyDataModule(Cache_dir=dire,**config)
     elif config.get("dataset",None)== 'coco':
         from COCODataModule import MyDataModule
-        Dataset=MyDataModule(Cache_dir=dir,**config)
+        Dataset=MyDataModule(Cache_dir=dire,**config)
     if devices is None:
         devices=config.get("devices","auto")
     if accelerator is None:
@@ -31,10 +31,11 @@ def train(config={
     # print("Training with config: {}".format(config))
     Dataset.batch_size=config["batch_size"]
     filename="model-{}".format(model.version)
+    modelSavedir=config.get("model_dir",dire)
     callbacks=[
         TQDMProgressBar(),
         #EarlyStopping(monitor="train_loss", mode="min",patience=10,check_finite=True,stopping_threshold=0.001),
-        ModelCheckpoint(monitor="train_loss", mode="min",dirpath=dir,filename=filename,save_top_k=1,save_last=True,save_weights_only=True),
+        ModelCheckpoint(monitor="train_loss", mode="min",dirpath=modelSavedir,filename=filename,save_top_k=1,save_last=True,save_weights_only=True),
         ]
     p=config['precision']
     if isinstance(p,str):
@@ -69,11 +70,11 @@ def train(config={
             precision=p,
             fast_dev_run=config.get("debug",False),
     )
-    if not os.path.exists(os.path.join(dir,filename)):
+    if not os.path.exists(os.path.join(modelSavedir,filename)):
         
         trainer.fit(model,Dataset)
     else:
-        model.load_from_checkpoint(os.path.join(dir,filename))
+        model.load_from_checkpoint(os.path.join(modelSavedir,filename))
         trainer.test(model,Dataset)
 #### This is a wrapper to make sure we log with Weights and Biases, You'll need your own user for this.
 def wandbtrain(config=None,dir=None,devices=None,accelerator=None,Dataset=None):
@@ -155,7 +156,7 @@ def SlurmRun(trialconfig):
                              'export CONDADIR=/storage/hpc/46/manders3/conda4/open-ce',                                                     #<-----CHANGE ME
                              'export NCCL_SOCKET_IFNAME=enp0s31f6',
                              'export WANDB_CACHE_DIR=$global_scratch', 
-                             'export TEMP=$global_scratch',
+                             'export TEMP=$global_storage',
                              'export ISHEC=True',])                                                 #<-----CHANGE ME])
     sub_commands.extend([ '#SBATCH --{}={}\n'.format(cmd, value) for  (cmd, value) in slurm_commands.items()])
     sub_commands.extend([

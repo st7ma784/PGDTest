@@ -7,74 +7,6 @@ class baseparser(HyperOptArgumentParser):
 
         #our base parser looks like :
         self.TEMPDIR=os.path.join(os.getenv("TEMP","."),"results")
-        '''
-            parser = argparse.ArgumentParser('Pre-trained-Model-Guided-Fine-Tuning for CLIP')
-
-            parser.add_argument('--print_freq', type=int, default=20)
-            parser.add_argument('--save_freq', type=int, default=50)
-            parser.add_argument('--test_freq', type=int, default=3)
-            parser.add_argument('--batch_size', type=int, default=256)
-            parser.add_argument('--num_workers', type=int, default=32)
-            parser.add_argument('--epochs', type=int, default=10)
-            parser.add_argument('--learning_rate', type=float, default=5e-5)
-            parser.add_argument("--weight_decay", type=float, default=0)
-            parser.add_argument("--warmup", type=int, default=1000)
-            parser.add_argument('--momentum', type=float, default=0.9)
-            parser.add_argument('--train_eps', type=float, default=2)
-            parser.add_argument('--train_numsteps', type=int, default=5)
-            parser.add_argument('--train_stepsize', type=int, default=1)
-            parser.add_argument('--test_eps', type=float, default=1)
-            parser.add_argument('--test_numsteps', type=int, default=10)
-            parser.add_argument('--test_stepsize', type=int, default=1)
-            parser.add_argument('--earlystop', type=int, default=1000)
-
-            # model
-            parser.add_argument('--model', type=str, default='clip')
-            parser.add_argument('--imagenet_root', type=str, default=None)
-            parser.add_argument('--arch', type=str, default='vit_b32')
-            parser.add_argument('--method', type=str, default='null_patch',
-                                choices=['null_patch'],
-                                help='choose visual prompting method')
-            parser.add_argument('--name', type=str, default='')
-            parser.add_argument('--prompt_size', type=int, default=30,
-                                help='size for visual prompts')
-            parser.add_argument('--add_prompt_size', type=int, default=0,
-                                help='size for additional visual prompts')
-
-            # dataset
-            parser.add_argument('--root', type=str, default='./data')
-            parser.add_argument('--dataset', type=str, default='cifar100')
-            parser.add_argument('--image_size', type=int, default=224)
-
-            # other
-            parser.add_argument('--seed', type=int, default=0,
-                                help='seed for initializing training')
-            parser.add_argument('--model_dir', type=str, default='./save/models',
-                                help='path to save models')
-            parser.add_argument('--filename', type=str, default=None)
-            parser.add_argument('--trial', type=int, default=1)
-            parser.add_argument('--resume', type=str, default=None)
-            parser.add_argument('--evaluate', default=False, action="store_true", )
-            parser.add_argument('--gpu', type=int, default=None)
-            parser.add_argument('--debug', action='store_true')
-            parser.add_argument('--Noattack', action='store_true')
-            parser.add_argument('--CW', action='store_true')
-
-            parser.add_argument('--train_class_count', type=int, default=90)
-            parser.add_argument('--last_num_ft', type=int, default=-1)
-
-            parser.add_argument('--noimginprop', action='store_true')
-            parser.add_argument('--autoattack', action='store_true')
-            args = parser.parse_args()
-
-            args.filename = '{}_{}_{}_{}_{}_{}_lr_{}_decay_{}_bsz_{}_warmup_{}_trial_{}_addp_{}'. \
-                format(args.name, args.method, args.prompt_size, args.dataset, args.model, args.arch,
-                    args.learning_rate, args.weight_decay, args.batch_size, args.warmup, args.trial,
-                    args.add_prompt_size)
-
-            return arg
-        
-        '''
    
         self.opt_list("--save_freq", default=50, type=int, tunable=False)
         self.opt_list("--test_freq", default=3, type=int, tunable=False)
@@ -112,7 +44,7 @@ class baseparser(HyperOptArgumentParser):
         self.opt_list("--attack_type", default="pgd", type=str,options=["pgd","cw","text","autoattack","noAttack"], tunable=False) # set this as tunable to trial different attack types
         self.opt_list("--test_attack_type", default="pgd", type=str,options=["pgd","cw","text","noAttack"], tunable=False)
         self.opt_list("--seed", default=0, type=int, tunable=False)
-        self.opt_list("--model_dir", default='./save/models', type=str, tunable=False)
+        self.opt_list("--model_dir", default=os.path.join(self.TEMPDIR,"modelckpts"), type=str, tunable=False)
         self.opt_list("--output_dir", default=self.TEMPDIR, type=str, tunable=False)
         self.opt_list("--filename", default=None, type=str, tunable=False)
         self.opt_list("--trial", default=1, type=int, tunable=False)
