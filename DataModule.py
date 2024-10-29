@@ -569,7 +569,11 @@ class MyDataModule(pl.LightningDataModule):
                         class_names = new_class_names
 
                     texts_tmp = self.refine_classname(class_names)
-                   
+                #make option for SUN397
+                elif name == 'SUN397':
+                    #get the dataset part
+                    class_names = each.dataset.classes
+                    texts_tmp = self.refine_classname(class_names)
                 else:
                      #print the names of the datasets that don't have classes
                     print(f"Dataset {name} does not have classes")
