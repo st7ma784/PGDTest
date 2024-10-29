@@ -136,6 +136,7 @@ def SlurmRun(trialconfig):
                 'export CONDADIR=/nobackup/projects/bdlan05/$USER/miniconda',                                                         #<-----CHANGE ME                                                    
                 'export WANDB_CACHE_DIR=/nobackup/projects/bdlan05/$USER/',
                 'export TEMP=/nobackup/projects/bdlan05/$USER/',
+                'export MODELDIR=/nobackup/projects/bdlan05/$USER/modelckpts',
                 'export NCCL_SOCKET_IFNAME=ib0'])
         comm="python3"
     #check if we on the submittor node :
@@ -146,6 +147,7 @@ def SlurmRun(trialconfig):
                              'export CONDADIR=$CONDA_PREFIX_1',                                                     #<-----CHANGE ME
                              'export WANDB_CACHE_DIR=/data', 
                              'export TEMP=/data',
+                             'export MODELDIR=/data/modelckpts',
                              'export ISHEC=False',])                                                 #<-----CHANGE ME])
     else:
 
@@ -156,7 +158,8 @@ def SlurmRun(trialconfig):
                              'export CONDADIR=/storage/hpc/46/manders3/conda4/open-ce',                                                     #<-----CHANGE ME
                              'export NCCL_SOCKET_IFNAME=enp0s31f6',
                              'export WANDB_CACHE_DIR=$global_scratch', 
-                             'export TEMP=$global_storage',
+                             'export TEMP=$global_scratch',
+                             'export MODELDIR=$global_storage/modelckpts',
                              'export ISHEC=True',])                                                 #<-----CHANGE ME])
     sub_commands.extend([ '#SBATCH --{}={}\n'.format(cmd, value) for  (cmd, value) in slurm_commands.items()])
     sub_commands.extend([

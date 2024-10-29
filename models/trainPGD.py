@@ -1068,7 +1068,7 @@ class myLightningModule(LightningModule):
         threshold=50
         EmptyCount=0
         while EmptyCount < 3:
-            time.sleep(1200)
+            sleep(60)
             clear=False
             for dataset_idx in range(self.test_data_loader_count):
                 # print("Saving results for dataset {}".format(dataset_idx))
@@ -1106,6 +1106,8 @@ class myLightningModule(LightningModule):
                     dirtyidx+=1
                 if clear:
                     EmptyCount+=1
+                    time.sleep(300)
+
                 # print("Saved results for dataset {}".format(dataset_idx))
             # if all([self.test_cleanresults[idx].empty() for idx in range(self.test_data_loader_count)]) and all([self.test_attackedresults[idx].empty() for idx in range(self.test_data_loader_count)]):
                 #if test_epoch_end has been called, we can exit the loop

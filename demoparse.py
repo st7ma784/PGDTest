@@ -7,7 +7,7 @@ class baseparser(HyperOptArgumentParser):
 
         #our base parser looks like :
         self.TEMPDIR=os.path.join(os.getenv("TEMP","."),"results")
-   
+        self.MODELDIR=os.path.join(os.getenv("MODELDIR","."),"MODELDIR")
         self.opt_list("--save_freq", default=50, type=int, tunable=False)
         self.opt_list("--test_freq", default=3, type=int, tunable=False)
         self.opt_list("--weight_decay", default=0, type=float, tunable=False)
@@ -44,7 +44,7 @@ class baseparser(HyperOptArgumentParser):
         self.opt_list("--attack_type", default="pgd", type=str,options=["pgd","cw","text","autoattack","noAttack"], tunable=False) # set this as tunable to trial different attack types
         self.opt_list("--test_attack_type", default="pgd", type=str,options=["pgd","cw","text","noAttack"], tunable=False)
         self.opt_list("--seed", default=0, type=int, tunable=False)
-        self.opt_list("--model_dir", default=os.path.join(self.TEMPDIR,"modelckpts"), type=str, tunable=False)
+        self.opt_list("--model_dir", default=os.path.join(self.MODELDIR,"modelckpts"), type=str, tunable=False)
         self.opt_list("--output_dir", default=self.TEMPDIR, type=str, tunable=False)
         self.opt_list("--filename", default=None, type=str, tunable=False)
         self.opt_list("--trial", default=1, type=int, tunable=False)
