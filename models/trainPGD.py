@@ -924,6 +924,8 @@ class myLightningModule(LightningModule):
     
     def on_test_end(self):
         print("Test epoch end called")
+        if hasattr(self,"save_result_worker_thread"):
+            self.save_result_worker_thread.join()
 
          
         #We need to modify the following code to sort by alpha, epsilon, step and then run the linear probes.
