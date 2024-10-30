@@ -606,14 +606,14 @@ class myLightningModule(LightningModule):
                 continue
             self.Dirtyclassifier.fit(BadLogits, BadLabels)
             self.Cleanclassifier.fit(GoodLogits, GoodLabels)
-            self.log( "Clean Classifier on Dirty Features on dataset {}".format(dataset_idx),self.Cleanclassifier.score(BadLogits, BadLabels))
-            self.log( "Dirty Classifier on Clean Features on dataset {}".format(dataset_idx),self.Dirtyclassifier.score(GoodLogits, GoodLabels))
-            self.log( "Clean Classifier on Clean Features on dataset {}".format(dataset_idx),self.Cleanclassifier.score(GoodLogits, GoodLabels))
-            self.log( "Dirty Classifier on Dirty Features on dataset {}".format(dataset_idx),self.Dirtyclassifier.score(BadLogits, BadLabels))
+            self.log( "Clean Classifier on Dirty Features on dataset {}".format(dataset_idx),self.Cleanclassifier.score(BadLogits, BadLabels),prog_bar=False, logger=True, sync_dist=False)
+            self.log( "Dirty Classifier on Clean Features on dataset {}".format(dataset_idx),self.Dirtyclassifier.score(GoodLogits, GoodLabels),prog_bar=False, logger=True, sync_dist=False)
+            self.log( "Clean Classifier on Clean Features on dataset {}".format(dataset_idx),self.Cleanclassifier.score(GoodLogits, GoodLabels),prog_bar=False, logger=True, sync_dist=False)
+            self.log( "Dirty Classifier on Dirty Features on dataset {}".format(dataset_idx),self.Dirtyclassifier.score(BadLogits, BadLabels),prog_bar=False, logger=True, sync_dist=False)
             self.generalclassifier.fit(np.concatenate([GoodLogits,BadLogits]), np.concatenate([GoodLabels,BadLabels]))
-            self.log( "General Classifier on Dirty Features on dataset {}".format(dataset_idx),self.generalclassifier.score(BadLogits, BadLabels))
-            self.log( "General Classifier on Clean Features on dataset {}".format(dataset_idx),self.generalclassifier.score(GoodLogits, GoodLabels))
-            self.log( "General Classifier on All Features on dataset {}".format(dataset_idx),self.generalclassifier.score(np.concatenate([GoodLogits,BadLogits]), np.concatenate([GoodLabels,BadLabels])))
+            self.log( "General Classifier on Dirty Features on dataset {}".format(dataset_idx),self.generalclassifier.score(BadLogits, BadLabels),prog_bar=False, logger=True, sync_dist=False)
+            self.log( "General Classifier on Clean Features on dataset {}".format(dataset_idx),self.generalclassifier.score(GoodLogits, GoodLabels),prog_bar=False, logger=True, sync_dist=False)
+            self.log( "General Classifier on All Features on dataset {}".format(dataset_idx),self.generalclassifier.score(np.concatenate([GoodLogits,BadLogits]), np.concatenate([GoodLabels,BadLabels])),prog_bar=False, logger=True, sync_dist=False)
 
         #this should give us PLENTY of data to write about! 
         
@@ -800,7 +800,7 @@ class myLightningModule(LightningModule):
                 itemB=itemB/itemB.norm(dim=-1, keepdim=True)
                 similarities= itemA@itemB.T  # should be B,B in shape, 
                 text_loss+=self.CETextLoss(similarities)
-            self.log("text_loss",text_loss)
+            self.log("text_loss",text_loss,prog_bar=False, logger=True, sync_dist=False)
 
             #step 5: backpropagate, making noise closer to clean features
             text_loss.backward()
@@ -823,7 +823,7 @@ class myLightningModule(LightningModule):
 
             loss = self.criterion(logits_per_text, torch.arange(X.size(0), device=self.device))
             loss.backward()
-            self.log("attack_loss",loss)
+            self.log("attack_loss",loss,prog_bar=False, logger=True, sync_dist=False)
             grad = delta.grad.detach()
             d = delta[:, :, :, :]
             g = grad[:, :, :, :]
@@ -889,8 +889,8 @@ class myLightningModule(LightningModule):
 
         # measure accuracy and record loss
         acc1 = accuracy(output_prompt, torch.arange(images.shape[0],device=images.device), topk=(1,))
-        self.log('test_clean_batch_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
-        self.log('test_clean_batch_acc', acc1[0].item(), on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        self.log('test_clean_batch_loss', loss, on_epoch=True, prog_bar=False, logger=True, sync_dist=True)
+        self.log('test_clean_batch_acc', acc1[0].item(), on_epoch=True, prog_bar=False, logger=True, sync_dist=True)
 
 
         return_dict = self.testattack(images, target, text, self.test_alphas, self.test_numsteps, self.test_epsilons)
@@ -913,9 +913,9 @@ class myLightningModule(LightningModule):
             loss=loss.permute(1,2,0).view(self.test_epsilons.size(0),self.test_alphas.size(0),images.size(0))
             for alpha in range(self.test_alphas.size(0)):
                 for epsilon in range(self.test_epsilons.size(0)):
-                        self.log(f'test_dirty_batch_loss_alpha_{self.test_alphas[alpha]}_epsilon_{self.test_epsilons[epsilon]}_numsteps_{Attack_step}', loss[epsilon,alpha].mean(), on_step=True, on_epoch=True, prog_bar=True, logger=True)
+                        self.log(f'test_dirty_batch_loss_alpha_{self.test_alphas[alpha]}_epsilon_{self.test_epsilons[epsilon]}_numsteps_{Attack_step}', loss[epsilon,alpha].mean(), on_epoch=True, logger=True, sync_dist=True)
                         acc1 = accuracy(output_prompt_adv[alpha,epsilon], torch.arange(images.size(0),device=images.device), topk=(1,))
-                        self.log(f'test_dirty_batch_acc_alpha_{self.test_alphas[alpha]}_epsilon_{self.test_epsilons[epsilon]}_numsteps_{Attack_step}', acc1[0].item(), on_step=True, on_epoch=True, prog_bar=True, logger=True)
+                        self.log(f'test_dirty_batch_acc_alpha_{self.test_alphas[alpha]}_epsilon_{self.test_epsilons[epsilon]}_numsteps_{Attack_step}', acc1[0].item(), on_epoch=True, logger=True, sync_dist=True)
                         self.test_attackedresults[dataloader_idx].put({"logits": img_embed_dirty[alpha,epsilon], "textlabels": target, "alpha": self.test_alphas[alpha].repeat(target.shape[0]), "epsilon": self.test_epsilons[epsilon].repeat(target.shape[0]), "step": torch.tensor(Attack_step).repeat(target.shape[0])})  
                
         return loss
@@ -1025,18 +1025,18 @@ class myLightningModule(LightningModule):
                 BadLogits=np.concatenate(BadLogits) if len(BadLogits) > 1 else BadLogits[0]
                 self.Dirtyclassifier.fit(BadLogits, BadLabels)
                 #Log classifier weights and bias
-                self.log("Dirty Classifier Weights Dataset {}".format(DataLoader_idx),self.Dirtyclassifier.coef_)
-                self.log("Dirty Classifier Bias Dataset {}".format(DataLoader_idx), self.Dirtyclassifier.intercept_)
+                self.log("Dirty Classifier Weights Dataset {}".format(DataLoader_idx),self.Dirtyclassifier.coef_, sync_dist=True)
+                self.log("Dirty Classifier Bias Dataset {}".format(DataLoader_idx), self.Dirtyclassifier.intercept_, sync_dist=True)
                 self.generalclassifier.fit(np.concatenate([GoodLogits,BadLogits]), np.concatenate([GoodLabels,BadLabels]))
-                self.log("General Classifier Weights Dataset {}".format(DataLoader_idx),self.generalclassifier.coef_)
-                self.log("General Classifier Bias Dataset {}".format(DataLoader_idx), self.generalclassifier.intercept_)
-                self.log( "Test Clean Classifier on Dirty Features on dataset {} alpha {} epsilon {} step {}".format(DataLoader_idx,key[0],key[1],key[2]),self.Cleanclassifier.score(BadLogits, BadLabels))
-                self.log( "Test Dirty Classifier on Clean Features on dataset {} alpha {} epsilon {} step {}".format(DataLoader_idx,key[0],key[1],key[2]),self.Dirtyclassifier.score(GoodLogits, GoodLabels))
-                self.log( "Test Clean Classifier on Clean Features on dataset {} alpha {} epsilon {} step {}".format(DataLoader_idx,key[0],key[1],key[2]),cleanscore)
-                self.log( "Test Dirty Classifier on Dirty Features on dataset {} alpha {} epsilon {} step {}".format(DataLoader_idx,key[0],key[1],key[2]),self.Dirtyclassifier.score(BadLogits, BadLabels))
-                self.log( "Test General Classifier on Dirty Features on dataset {} alpha {} epsilon {} step {}".format(DataLoader_idx,key[0],key[1],key[2]),self.generalclassifier.score(BadLogits, BadLabels))
-                self.log( "Test General Classifier on Clean Features on dataset {} alpha {} epsilon {} step {}".format(DataLoader_idx,key[0],key[1],key[2]),self.generalclassifier.score(GoodLogits, GoodLabels))
-                self.log( "Test General Classifier on All Features on dataset {} alpha {} epsilon {} step {}".format(DataLoader_idx,key[0],key[1],key[2]),self.generalclassifier.score(np.concatenate([GoodLogits,BadLogits]), np.concatenate([GoodLabels,BadLabels])))
+                self.log("General Classifier Weights Dataset {}".format(DataLoader_idx),self.generalclassifier.coef_, sync_dist=True)
+                self.log("General Classifier Bias Dataset {}".format(DataLoader_idx), self.generalclassifier.intercept_, sync_dist=True)
+                self.log( "Test Clean Classifier on Dirty Features on dataset {} alpha {} epsilon {} step {}".format(DataLoader_idx,key[0],key[1],key[2]),self.Cleanclassifier.score(BadLogits, BadLabels), sync_dist=True)
+                self.log( "Test Dirty Classifier on Clean Features on dataset {} alpha {} epsilon {} step {}".format(DataLoader_idx,key[0],key[1],key[2]),self.Dirtyclassifier.score(GoodLogits, GoodLabels), sync_dist=True)
+                self.log( "Test Clean Classifier on Clean Features on dataset {} alpha {} epsilon {} step {}".format(DataLoader_idx,key[0],key[1],key[2]),cleanscore, sync_dist=True)
+                self.log( "Test Dirty Classifier on Dirty Features on dataset {} alpha {} epsilon {} step {}".format(DataLoader_idx,key[0],key[1],key[2]),self.Dirtyclassifier.score(BadLogits, BadLabels), sync_dist=True)
+                self.log( "Test General Classifier on Dirty Features on dataset {} alpha {} epsilon {} step {}".format(DataLoader_idx,key[0],key[1],key[2]),self.generalclassifier.score(BadLogits, BadLabels), sync_dist=True)
+                self.log( "Test General Classifier on Clean Features on dataset {} alpha {} epsilon {} step {}".format(DataLoader_idx,key[0],key[1],key[2]),self.generalclassifier.score(GoodLogits, GoodLabels), sync_dist=True)
+                self.log( "Test General Classifier on All Features on dataset {} alpha {} epsilon {} step {}".format(DataLoader_idx,key[0],key[1],key[2]),self.generalclassifier.score(np.concatenate([GoodLogits,BadLogits]), np.concatenate([GoodLabels,BadLabels])), sync_dist=True)
 
             #delete the files
             for file in list(dirty_files):
@@ -1047,8 +1047,8 @@ class myLightningModule(LightningModule):
                 os.remove(os.path.join(path,file))
 
 
-        del self.test_cleanresults
-        del self.test_attackedresults
+        # del self.test_cleanresults
+        # del self.test_attackedresults
         if hasattr(self,"save_result_worker_thread"):
             self.save_result_worker_thread.join()
             del self.save_result_worker_thread
