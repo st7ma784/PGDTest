@@ -579,7 +579,7 @@ class myLightningModule(LightningModule):
 
         return loss
     
-    def on_validation_epoch_end(self):
+    def on_validation_end(self):
 
         #make linear probes here, and log the results.
         
@@ -834,7 +834,7 @@ class myLightningModule(LightningModule):
             delta.grad.zero_()
         return X,text_tokens+delta
     
-    def on_test_epoch_start(self):
+    def on_test_start(self):
         self.mu_img = torch.tensor((0.485, 0.456, 0.406)).view(3,1,1).to(self.device)
         self.std_img = torch.tensor((0.229, 0.224, 0.225)).view(3,1,1).to(self.device)
         #to be thread safe we should create queues insead of lists.#
@@ -922,7 +922,7 @@ class myLightningModule(LightningModule):
                     
     
     
-    def on_test_epoch_end(self):
+    def on_test_end(self):
         print("Test epoch end called")
 
          
