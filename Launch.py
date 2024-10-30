@@ -142,7 +142,7 @@ def SlurmRun(trialconfig):
                 'export NCCL_SOCKET_IFNAME=ib0'])
         comm="python3"
     #check if we on the submittor node :
-    if str(os.getenv("HOSTNAME","localhost")).startswith("localhost"):
+    elif str(os.getenv("HOSTNAME","localhost")).startswith("localhost"):
         sub_commands.extend([
                              '#SBATCH --mem=32G',
                              '#SBATCH --cpus-per-task=8',
