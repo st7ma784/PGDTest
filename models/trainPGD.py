@@ -408,6 +408,10 @@ class myLightningModule(LightningModule):
             self.attack=self.no_attack
         else:
             raise ValueError 
+        self.train_alpha = self.args.get("alpha",1)
+        self.train_attack_iters = self.args.get("attack_iters",5)
+        self.train_epsilon = self.args.get("train_eps",1)
+
     
     def training_step(self, batch, batch_idx):
         #The batch is collated for you, so just seperate it here and calculate loss. 
@@ -420,7 +424,7 @@ class myLightningModule(LightningModule):
         text_embed= text_embed/ text_embed.norm(dim=-1, keepdim=True) #B,512
         # ori_text_embed= ori_text_embed/ ori_text_embed.norm(dim=-1, keepdim=True)
         # images = self.prompter(images) #does nothing - its a null prompter
-        Dirtyimages,_=self.attack(images, target, text, self.args.get("alpha",1), self.args.get("attack_iters",5), epsilon=self.args.get("train_eps",1)) #B,3,224,224
+        Dirtyimages,_=self.attack(images, target, text, self.train_alpha, self.train_attack_iters, epsilon=self.train_epsilon) #B,3,224,224
         '''
         Here's where you run the dirty image through your model... first through an encoder, then through a decoder.
 
@@ -509,6 +513,9 @@ class myLightningModule(LightningModule):
             self.testattack=self.no_attack
         else:
             raise ValueError 
+        self.test_alpha = self.args.get("test_alpha",1)
+        self.test_attack_iters = self.args.get("test_attack_iters",5)
+        self.test_epsilon = self.args.get("test_eps",1)
     
     def validation_step(self, batch, batch_idx,  dataloader_idx=0, *args, **kwargs):
         images, target,text = batch
@@ -558,7 +565,7 @@ class myLightningModule(LightningModule):
         #     delta_prompt = self.attack_pgd(images, target, text,self.args.get("test_stepsize",2), self.args.get("test_numsteps",20), epsilon=self.args.get("test_eps",1))
 
         # output_prompt_adv, _ = model(prompter(clip_img_preprocessing(images + delta_prompt)), text_tokens, prompt_token)
-        dirtyImages,dirtyText=self.testattack(images, target, text, self.args.get("test_stepsize",2), self.args.get("test_numsteps",20), epsilon=self.args.get("test_eps",1))
+        dirtyImages,dirtyText=self.testattack(images, target, text, self.test_alpha, self.test_numsteps, epsilon=self.test_epsilon)
 
         img_embed=self.model.encode_image(clip_img_preprocessing(dirtyImages))
         scale_text_embed=self.make_labels(images,dirtyText)   #make labels out of whatevers clean from prior line. 
