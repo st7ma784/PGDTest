@@ -146,3 +146,5 @@ annotations/*
 slurm_cmdtrial*
 *.sh
 *.out
+MODELDIR/*
+#modelckpts/model-coco_text_0.0005_32_0.00392156862745098_5_0.00392156862745098_0.00392156862745098_pgd_30_0_sgd_True.ckpt
