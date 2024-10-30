@@ -579,7 +579,7 @@ class myLightningModule(LightningModule):
 
         return loss
     
-    def on_validation_end(self):
+    def on_validation_epoch_end(self):
 
         #make linear probes here, and log the results.
         
