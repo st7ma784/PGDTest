@@ -565,7 +565,7 @@ class myLightningModule(LightningModule):
         #     delta_prompt = self.attack_pgd(images, target, text,self.args.get("test_stepsize",2), self.args.get("test_numsteps",20), epsilon=self.args.get("test_eps",1))
 
         # output_prompt_adv, _ = model(prompter(clip_img_preprocessing(images + delta_prompt)), text_tokens, prompt_token)
-        dirtyImages,dirtyText=self.testattack(images, target, text, self.test_alpha, self.test_numsteps, epsilon=self.test_epsilon)
+        dirtyImages,dirtyText=self.testattack(images, target, text, self.test_alpha, self.test_attack_iters, epsilon=self.test_epsilon)
 
         img_embed=self.model.encode_image(clip_img_preprocessing(dirtyImages))
         scale_text_embed=self.make_labels(images,dirtyText)   #make labels out of whatevers clean from prior line. 
