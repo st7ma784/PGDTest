@@ -6,6 +6,8 @@ for folder in "$DIRECTORY"/*; do
         for file in "$folder"/*; do
             if [ -f "$file" ]; then  # Check if it's a file
                 echo "Submitting job $file"
+                sed -i '/module add opence/d' "$file"
+
                 sbatch "$file"
                 echo "Job $file submitted"
             fi
