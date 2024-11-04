@@ -1077,7 +1077,7 @@ class myLightningModule(LightningModule):
         threshold=50
         EmptyCount=0
         while EmptyCount < 3:
-            sleep(60)
+            time.sleep(60)
             clear=False
             for dataset_idx in range(self.test_data_loader_count):
                 # print("Saving results for dataset {}".format(dataset_idx))
