@@ -1096,7 +1096,8 @@ class myLightningModule(LightningModule):
         version=self.version
         threshold=50
         EmptyCount=0
-        while EmptyCount < 3:
+        while EmptyCount < self.test_data_loader_count:
+
             time.sleep(60)
             clear=False
             for dataset_idx in range(self.test_data_loader_count):
