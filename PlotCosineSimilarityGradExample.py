@@ -21,7 +21,7 @@ normed_ring_points = ring_points / torch.norm(torch.tensor(ring_points), dim=-1,
 alltargets= torch.tensor(np.concatenate([target_point, random_points]))
 normed_alltargets = alltargets / torch.norm(torch.tensor(alltargets), dim=-1, keepdim=True)
 cosine_similarity = normed_ring_points @ normed_alltargets.T
-losses = torch.nn.CrossEntropyLoss()(torch.tensor(ring_points), torch.zeros(100,dtype=torch.long))
+losses = torch.nn.CrossEntropyLoss()(torch.tensor(ring_points), torch.zeros(100,dtype=torch.long)).detach().numpy()
 
 #plot losses
 plt.plot(losses)
@@ -43,10 +43,11 @@ plt.scatter(prediction_point[0], prediction_point[1], color='blue', label='Predi
 # Plot the ring points with color based on cross entropy loss
 norm = plt.Normalize(losses.min(), losses.max())
 colors = plt.cm.viridis(norm(losses))
-plt.scatter(ring_points[:, 0], ring_points[:, 1], c=colors, label='Ring Points')
+print(colors)
 
-# Add color bar
-sm = plt.cm.ScalarMappable(cmap=plt.cm.viridis, norm=norm)
+
+plt.scatter(ring_points[:, 0], ring_points[:, 1], c=losses, label='Ring Points')
+
 
 # Add legend and show plot
 plt.legend()
