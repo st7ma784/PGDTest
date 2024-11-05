@@ -21,7 +21,7 @@ normed_ring_points = ring_points / torch.norm(torch.tensor(ring_points), dim=-1,
 alltargets= torch.tensor(np.concatenate([target_point, random_points]))
 normed_alltargets = alltargets / torch.norm(torch.tensor(alltargets), dim=-1, keepdim=True)
 cosine_similarity = normed_ring_points @ normed_alltargets.T
-losses = torch.nn.CrossEntropyLoss()(torch.tensor(ring_points), torch.zeros(100,dtype=torch.long)).detach().numpy()
+losses = torch.nn.CrossEntropyLoss(reduction=None)(torch.tensor(ring_points), torch.zeros(100,dtype=torch.long)).detach().numpy()
 
 #plot losses
 plt.plot(losses)
