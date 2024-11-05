@@ -951,6 +951,7 @@ class myLightningModule(LightningModule):
     
     def on_test_end(self):
         print("Test epoch end called")
+        self.test_epoch_end_called=True
         if hasattr(self,"save_result_worker_thread"):
             self.save_result_worker_thread.join()
 
@@ -1096,9 +1097,9 @@ class myLightningModule(LightningModule):
         version=self.version
         threshold=50
         EmptyCount=0
-        while EmptyCount < self.test_data_loader_count:
+        while not self.test_epoch_end_called:
 
-            time.sleep(60)
+            time.sleep(120)
             clear=False
             for dataset_idx in range(self.test_data_loader_count):
                 # print("Saving results for dataset {}".format(dataset_idx))
