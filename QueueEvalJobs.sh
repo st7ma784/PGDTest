@@ -10,6 +10,7 @@ for folder in "$DIRECTORY"/*; do
                 if [[ $(hostname) == *".bede.dur.ac.uk" ]]; then
                     sed -i '/module add opence/d' "$file"
                     echo "Running on bede"
+                fi
                 sbatch "$file"
                 echo "Job $file submitted"
             fi
