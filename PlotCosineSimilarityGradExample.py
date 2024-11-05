@@ -35,7 +35,7 @@ plt.savefig('CrossEntropyLossRing.png')
 plt.scatter(random_points[:, 0], random_points[:, 1], label='Random Points')
 
 # Plot the target point
-plt.scatter(target_point[0], target_point[1], color='red', label='Target Point')
+plt.scatter(target_point[:,0], target_point[:,1], color='red', label='Target Point')
 
 # Plot the prediction point
 plt.scatter(prediction_point[0], prediction_point[1], color='blue', label='Prediction Point')
@@ -46,9 +46,7 @@ colors = plt.cm.viridis(norm(losses))
 plt.scatter(ring_points[:, 0], ring_points[:, 1], c=colors, label='Ring Points')
 
 # Add color bar
-sm = plt.cm.ScalarMappable(cmap='viridis', norm=norm)
-sm.set_array([])
-plt.colorbar(sm, label='Cross Entropy Loss')
+sm = plt.cm.ScalarMappable(cmap=plt.cm.viridis, norm=norm)
 
 # Add legend and show plot
 plt.legend()
