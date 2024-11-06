@@ -6,8 +6,8 @@ class baseparser(HyperOptArgumentParser):
         super().__init__( *args,strategy=strategy, add_help=False) # or random search
 
         #our base parser looks like :
-        self.TEMPDIR=os.path.join(os.getenv("TEMP","."),"results")
-        self.MODELDIR=os.path.join(os.getenv("MODELDIR","."),"MODELDIR")
+        self.TEMPDIR=os.path.join(os.getenv("TEMP","$TEMP"),"results")
+        self.MODELDIR=os.path.join(os.getenv("MODELDIR","$MODELDIR"),"MODELDIR")
         self.opt_list("--save_freq", default=50, type=int, tunable=False)
         self.opt_list("--test_freq", default=3, type=int, tunable=False)
         self.opt_list("--weight_decay", default=0, type=float, tunable=False)
