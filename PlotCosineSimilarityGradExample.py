@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 # Generate 64 random points
 
-random_points = (np.random.rand(64, 2)*2) - 1 
+random_points = (np.random.rand(3, 2)*2) - 1 
 
 # Define target point and prediction point
 target_point = np.array([[0.5, 0.5]])

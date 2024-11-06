@@ -1007,9 +1007,12 @@ class myLightningModule(LightningModule):
             GoodLogits=np.concatenate(GoodLogits) if len(GoodLogits) > 1 else GoodLogits[0]
             self.Cleanclassifier.fit(GoodLogits, GoodLabels)
             #Log classifier weights and bias using self.logger.experiment.log
-            self.logger.experiment.log("Clean Classifier Weights Dataset {}".format(DataLoader_idx),self.Cleanclassifier.coef_.tolist())
-            self.logger.experiment.log("Clean Classifier Bias Dataset {}".format(DataLoader_idx),self.Cleanclassifier.intercept_.tolist())
-            
+            #convert to dict and log
+
+            # print("Clean Classifier Weights Dataset {}".format(DataLoader_idx),self.Cleanclassifier.coef_.tolist())
+            # print("Clean Classifier Bias Dataset {}".format(DataLoader_idx),self.Cleanclassifier.intercept_.tolist())
+            #save these to disk
+            np.savez(os.path.join(path,"CleanClassifierWeights{}_{}.npz".format(self.version,DataLoader_idx)),weights=self.Cleanclassifier.coef_,bias=self.Cleanclassifier.intercept_)
             cleanscore=self.Cleanclassifier.score(GoodLogits, GoodLabels)
             BadLabels=[]
             BadLogits=[]
@@ -1055,11 +1058,13 @@ class myLightningModule(LightningModule):
                 BadLogits=np.concatenate(BadLogits) if len(BadLogits) > 1 else BadLogits[0]
                 self.Dirtyclassifier.fit(BadLogits, BadLabels)
                 #Log classifier weights and bias
-                self.logger.experiment.log("Dirty Classifier Weights Dataset {}".format(DataLoader_idx),self.Dirtyclassifier.coef_, sync_dist=True)
-                self.logger.experiment.log("Dirty Classifier Bias Dataset {}".format(DataLoader_idx), self.Dirtyclassifier.intercept_, sync_dist=True)
+                # self.logger.experiment.log("Dirty Classifier Weights Dataset {}".format(DataLoader_idx),self.Dirtyclassifier.coef_, sync_dist=True)
+                # self.logger.experiment.log("Dirty Classifier Bias Dataset {}".format(DataLoader_idx), self.Dirtyclassifier.intercept_, sync_dist=True)
                 self.generalclassifier.fit(np.concatenate([GoodLogits,BadLogits]), np.concatenate([GoodLabels,BadLabels]))
-                self.logger.experiment.log("General Classifier Weights Dataset {}".format(DataLoader_idx),self.generalclassifier.coef_, sync_dist=True)
-                self.logger.experiment.log("General Classifier Bias Dataset {}".format(DataLoader_idx), self.generalclassifier.intercept_, sync_dist=True)
+                # self.logger.experiment.log("General Classifier Weights Dataset {}".format(DataLoader_idx),self.generalclassifier.coef_, sync_dist=True)
+                # self.logger.experiment.log("General Classifier Bias Dataset {}".format(DataLoader_idx), self.generalclassifier.intercept_, sync_dist=True)
+                np.savez(os.path.join(path,"DirtyClassifierWeights{}_{}_{}_{}_{}.npz".format(self.version,DataLoader_idx,a,e,s)),weights=self.Dirtyclassifier.coef_,bias=self.Dirtyclassifier.intercept_)
+                np.savez(os.path.join(path,"GeneralClassifierWeights{}_{}_{}_{}_{}.npz".format(self.version,DataLoader_idx,a,e,s)),weights=self.generalclassifier.coef_,bias=self.generalclassifier.intercept_)
                 self.logger.experiment.log( "Test Clean Classifier on Dirty Features on dataset {} alpha {} epsilon {} step {}".format(DataLoader_idx,key[0],key[1],key[2]),self.Cleanclassifier.score(BadLogits, BadLabels), sync_dist=True)
                 self.logger.experiment.log( "Test Dirty Classifier on Clean Features on dataset {} alpha {} epsilon {} step {}".format(DataLoader_idx,key[0],key[1],key[2]),self.Dirtyclassifier.score(GoodLogits, GoodLabels), sync_dist=True)
                 self.logger.experiment.log( "Test Clean Classifier on Clean Features on dataset {} alpha {} epsilon {} step {}".format(DataLoader_idx,key[0],key[1],key[2]),cleanscore, sync_dist=True)
