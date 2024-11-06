@@ -2,7 +2,7 @@
 FOLDER=$1 # Folder to move is the first argument
 
 # Loop through each folder in the current directory
-for dir in FOLDER/*; do
+for dir in $FOLDER/*; do
     # Find all files in the directory
     find "$dir" -type f | while read -r file; do
         # Replace ./results with $global_scratch/results
