@@ -524,6 +524,16 @@ class myLightningModule(LightningModule):
         self.test_attack_iters = self.args.get("test_attack_iters",5)
         self.test_epsilon = self.args.get("test_eps",1)
     
+
+    '''
+    a useful idea for you is to keep looking for the best way to understand the attacks
+    If we monitor the first k- items in each epoch, we can see how the attack is changing the model.
+    we can see how this changes through changing! and where this sits in relation to the classifiers.
+    
+    
+    
+    
+    '''
     def validation_step(self, batch, batch_idx,  dataloader_idx=0, *args, **kwargs):
         images, target,text = batch
         #a is the image, b is the target
