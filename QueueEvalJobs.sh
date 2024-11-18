@@ -9,7 +9,7 @@ for folder in "$DIRECTORY"/*; do
                 #if hostname ends in bede.dur.ac.uk
                 if [[ $(hostname) == *".bede.dur.ac.uk" ]]; then
                     sed -i '/module add opence/d' "$file"
-                    sed -i 's/conda activate $CONDADIR/source activate $CONDADIR/g' filename
+                    sed -i 's/conda activate $CONDADIR/source activate $CONDADIR/g' "$file"
                     echo "Running on bede"
                 fi
                 sbatch "$file"
