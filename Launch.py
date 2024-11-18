@@ -135,7 +135,7 @@ def SlurmRun(trialconfig):
     if str(os.getenv("HOSTNAME","localhost")).endswith("bede.dur.ac.uk"):
         sub_commands.extend([
                 '#SBATCH --account bdlan05',
-                # '#SBATCH -p gh',
+                '#SBATCH -p gh',
                 'export CONDADIR=/nobackup/projects/bdlan05/$USER/miniconda',                                                         #<-----CHANGE ME                                                    
                 'export WANDB_CACHE_DIR=/nobackup/projects/bdlan05/$USER/',
                 'export TEMP=/nobackup/projects/bdlan05/$USER/',
@@ -260,7 +260,7 @@ if __name__ == '__main__':
 
             
             
-            result = call('{} {}'.format("sbatch", slurm_cmd_script_path), shell=True)
+            result = call('{} {}'.format("ghbatch", slurm_cmd_script_path), shell=True)
             if result == 0:
                 print('launched exp ', slurm_cmd_script_path)
                 
