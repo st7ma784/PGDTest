@@ -135,7 +135,7 @@ def SlurmRun(trialconfig):
     if str(os.getenv("HOSTNAME","localhost")).endswith("bede.dur.ac.uk"):
         sub_commands.extend([
                 '#SBATCH --account bdlan05',
-                #'#SBATCH -p gh', UNCOMMENT FOR GH NODES 
+                '#SBATCH -p gh',# UNCOMMENT FOR GH NODES 
                 'export CONDADIR=/nobackup/projects/bdlan05/$USER/miniconda',                                                         #<-----CHANGE ME                                                    
                 'export WANDB_CACHE_DIR=/nobackup/projects/bdlan05/$USER/',
                 'export TEMP=/nobackup/projects/bdlan05/$USER/',
@@ -163,15 +163,18 @@ def SlurmRun(trialconfig):
                              'export WANDB_CACHE_DIR=$global_scratch', 
                              'export TEMP=$global_scratch',
                              'export MODELDIR=$global_storage/modelckpts',
-                             'export ISHEC=True',])                                                 #<-----CHANGE ME])
+                             'export ISHEC=True',
+                             'module add opence',
+                             'conda activate $CONDADIR',
+                             
+                             ])                                                 #<-----CHANGE ME])
     sub_commands.extend([ '#SBATCH --{}={}\n'.format(cmd, value) for  (cmd, value) in slurm_commands.items()])
     sub_commands.extend([
         'export SLURM_NNODES=$SLURM_JOB_NUM_NODES',
         'export wandb=9cf7e97e2460c18a89429deed624ec1cbfb537bc',
         'export WANDB_API_KEY=9cf7e97e2460c18a89429deed624ec1cbfb537bc',                                                              #<-----CHANGE ME                                         
         'source /etc/profile',
-        'module add opence',
-        'conda activate $CONDADIR',
+
         #'pip install -r requirements.txt',                                                   # ...and activate the conda environment
     ])
     script_name= os.path.realpath(sys.argv[0]) #Find this scripts name...
@@ -260,7 +263,7 @@ if __name__ == '__main__':
 
             
             
-            result = call('{} {}'.format("sbatch", slurm_cmd_script_path), shell=True) #USE SBATCH For GHNodes
+            result = call('{} {}'.format("ghbatch", slurm_cmd_script_path), shell=True) #USE SBATCH For GHNodes
             if result == 0:
                 print('launched exp ', slurm_cmd_script_path)
                 
