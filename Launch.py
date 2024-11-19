@@ -66,7 +66,7 @@ def train(config={
             #                        #state_dict_type='full'
             # ),
             #strategy='ddp_find_unused_parameters_true',
-
+            auto_scale_batch_size='power',
             callbacks=callbacks,
             gradient_clip_val=0.25,# Not supported for manual optimization
             precision=p,
