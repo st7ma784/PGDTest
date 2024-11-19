@@ -66,7 +66,7 @@ def train(config={
             #                        #state_dict_type='full'
             # ),
             #strategy='ddp_find_unused_parameters_true',
-            auto_scale_batch_size='power',
+            #auto_scale_batch_size='power',
             callbacks=callbacks,
             gradient_clip_val=0.25,# Not supported for manual optimization
             precision=p,
@@ -135,7 +135,7 @@ def SlurmRun(trialconfig):
     if str(os.getenv("HOSTNAME","localhost")).endswith("bede.dur.ac.uk"):
         sub_commands.extend([
                 '#SBATCH --account bdlan05',
-                '#SBATCH -p gh',# UNCOMMENT FOR GH NODES 
+                #'#SBATCH -p gh',# UNCOMMENT FOR GH NODES 
                 'export CONDADIR=/nobackup/projects/bdlan05/$USER/miniconda',                                                         #<-----CHANGE ME                                                    
                 'export WANDB_CACHE_DIR=/nobackup/projects/bdlan05/$USER/',
                 'export TEMP=/nobackup/projects/bdlan05/$USER/',
@@ -263,7 +263,7 @@ if __name__ == '__main__':
 
             
             
-            result = call('{} {}'.format("ghbatch", slurm_cmd_script_path), shell=True) #USE SBATCH For GHNodes
+            result = call('{} {}'.format("sbatch", slurm_cmd_script_path), shell=True) #USE SBATCH For GHNodes
             if result == 0:
                 print('launched exp ', slurm_cmd_script_path)
                 
