@@ -135,12 +135,20 @@ def SlurmRun(trialconfig):
     if str(os.getenv("HOSTNAME","localhost")).endswith("bede.dur.ac.uk"):
         sub_commands.extend([
                 '#SBATCH --account bdlan05',
-                #'#SBATCH -p gh',# UNCOMMENT FOR GH NODES 
+                '#SBATCH -p gh',# UNCOMMENT FOR GH NODES 
                 'export CONDADIR=/nobackup/projects/bdlan05/$USER/miniconda',                                                         #<-----CHANGE ME                                                    
                 'export WANDB_CACHE_DIR=/nobackup/projects/bdlan05/$USER/',
                 'export TEMP=/nobackup/projects/bdlan05/$USER/',
                 'export MODELDIR=/nobackup/projects/bdlan05/$USER/modelckpts',
-                'export NCCL_SOCKET_IFNAME=ib0'])
+                'export NCCL_SOCKET_IFNAME=ib0',
+                'export arch=$(uname -i)', # Get the CPU architecture
+                'if [[ $arch == "aarch64" ]]; then',#
+                # Set variables and source scripts for aarch64
+                '   export CONDADIR=/nobackup/projects/<project>/$USER/aarchminiconda', # Update this with your <project> code.
+                '   source $CONDADIR/etc/profile.d/conda.sh',
+                'fi',
+                
+                ])
         comm="python3"
     #check if we on the submittor node :
     elif str(os.getenv("HOSTNAME","localhost")).startswith("localhost"):
@@ -263,7 +271,7 @@ if __name__ == '__main__':
 
             
             
-            result = call('{} {}'.format("sbatch", slurm_cmd_script_path), shell=True) #USE SBATCH For GHNodes
+            result = call('{} {}'.format("ghbatch", slurm_cmd_script_path), shell=True) #USE SBATCH For GHNodes
             if result == 0:
                 print('launched exp ', slurm_cmd_script_path)
                 

@@ -1,4 +1,5 @@
 DIRECTORY="./slurm_scripts"
+arch=$(uname -i) # Get the CPU architecture
 
 
 for folder in "$DIRECTORY"/*; do
@@ -12,7 +13,13 @@ for folder in "$DIRECTORY"/*; do
                     sed -i 's/conda activate $CONDADIR/source activate $CONDADIR/g' "$file"
                     echo "Running on bede"
                 fi
-                sbatch "$file"
+                if [[ $arch == "aarch64" ]]; then
+                # Set variables and source scripts for aarch64
+                    ghbatch "$file"
+                else
+                    sbatch "$file"
+                fi
+
                 echo "Job $file submitted"
             fi
         done
