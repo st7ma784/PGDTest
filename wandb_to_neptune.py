@@ -34,7 +34,7 @@ from neptune.utils import stringify_unsupported
 from tqdm.auto import tqdm
 
 # %%
-wandb.require("core")
+# wandb.require("core")
 client = wandb.Api(timeout=120)
 
 # %% Input prompts
@@ -47,7 +47,7 @@ if client.default_entity:
     )
 else:
     wandb_entity = input("Enter W&B entity name: ").strip()
-
+print("Using W&B entity:", wandb_entity)
 if default_neptune_workspace := os.getenv("NEPTUNE_PROJECT"):
     default_neptune_workspace = default_neptune_workspace.split("/")[0]
     neptune_workspace = (
@@ -309,6 +309,7 @@ def copy_files(neptune_run: neptune.Run, wandb_run: client.run) -> None:
 
 def copy_project(wandb_project: client.project) -> None:
     # sourcery skip: identity-comprehension
+    global wandb_entity
     wandb_project_name = wandb_project.name.replace("_", "-")
 
     # Create a new Neptune project for each W&B project
