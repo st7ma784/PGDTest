@@ -38,11 +38,11 @@ class HDF5DataModule(pl.LightningDataModule):
         self.HDF5file_path = os.path.join(file_path,"Dataset")
         #make HDF5 file at the given path
         #create the HDF5 file
-        self.HDF5file = h5py.File(file_path, 'w')
+        self.HDF5file = h5py.File(self.HDF5file_path, 'w')
         self.cache_dir=file_path
-        self.HDF5file = h5py.File(file_path, 'r')
+        self.HDF5file = h5py.File(self.HDF5file_path, 'r')
         self.batch_size = batch_size
-        self.transform = transform
+        self.transform = transform if transform is not None else transforms.Compose([transforms.Resize((224, 224)), transforms.ToTensor()])
     def setup(self):
         self.dataset = HDF5COCOCaptionsDataset(self.HDF5file_path,root=self.root,annFile=self.annFile, transform=self.transform)
 
@@ -104,20 +104,20 @@ class HDF5DataModule(pl.LightningDataModule):
         for i,filename in enumerate(filter(lambda x: x.endswith(".jpg"),os.listdir(self.root))):
         
             img=Image.open(os.path.join(self.root,filename))
-            img=img.resize((224,224))
-            data.append(torch.tensor(img))
+            img=self.transform(img)
+            data.append(img)
             labels.append(filename)
             if i%1000==0:
                 print("Loaded",i,"images")
                 #save the data to the hdf5 file
                 #if the dataset data already exists, extend it
                 if 'data' in self.HDF5file.keys():
-                    self.HDF5file['data'].resize((len(self.HDF5file['data'])+len(data),224,224,3))
+                    self.HDF5file['data'].resize((len(self.HDF5file['data'])+len(data),3,224,224))
                     self.HDF5file['data'][-len(data):]=data
                     self.HDF5file['labels'].resize((len(self.HDF5file['labels'])+len(labels)))
                     self.HDF5file['labels'][-len(labels):]=labels
                 else:
-                    self.HDF5file.create_dataset('data', data=data)
+                    self.HDF5file.create_dataset('data', data=torch.stack(data))
                     self.HDF5file.create_dataset('labels', data=labels)
                 print("Loaded",len(data),"images")
                 data=[]
@@ -143,7 +143,7 @@ if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--data_dir', type=str, default=os.getcwd())
-    parser.add_argument('--batch_size', type=int, default=1)
+    parser.add_argument('--batch_size', type=int, default=32)
     args = parser.parse_args()
     data_dir = args.data_dir
     batch_size = args.batch_size
