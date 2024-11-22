@@ -140,7 +140,7 @@ def SlurmRun(trialconfig):
                 'export WANDB_CACHE_DIR=/nobackup/projects/bdlan05/$USER/',
                 'export TEMP=/nobackup/projects/bdlan05/$USER/',
                 'export MODELDIR=/nobackup/projects/bdlan05/$USER/modelckpts',
-                'export NCCL_SOCKET_IFNAME=ib0',
+                #'export NCCL_SOCKET_IFNAME=ib0',
                 'export arch=$(uname -i)', # Get the CPU architecture
                 'if [[ $arch == "aarch64" ]]; then',#
                 # Set variables and source scripts for aarch64
@@ -196,7 +196,7 @@ def SlurmRun(trialconfig):
     # and then append command 'pip install -r requirements.txt...
     # This should add your pip file from the launch dir to the run location, then install on each node.
 
-    sub_commands.append('srun {} {} {}'.format(comm, script_name,trialArgs))
+    sub_commands.append('ghrun {} {} {}'.format(comm, script_name,trialArgs))
     #when launched, this script will be called with no trials, and so drop into the wandbtrain section,
     sub_commands = [x.lstrip() for x in sub_commands]
 
