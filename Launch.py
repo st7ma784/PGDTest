@@ -135,7 +135,7 @@ def SlurmRun(trialconfig):
     if str(os.getenv("HOSTNAME","localhost")).endswith("bede.dur.ac.uk"):
         sub_commands.extend([
                 '#SBATCH --account bdlan05',
-                #'#SBATCH -p gh',# UNCOMMENT FOR GH NODES 
+                '#SBATCH -p gh',# UNCOMMENT FOR GH NODES 
                 'export CONDADIR=/nobackup/projects/bdlan05/$USER/miniconda',                                                         #<-----CHANGE ME                                                    
                 'export WANDB_CACHE_DIR=/nobackup/projects/bdlan05/$USER/',
                 'export TEMP=/nobackup/projects/bdlan05/$USER/',
@@ -144,11 +144,14 @@ def SlurmRun(trialconfig):
                 'export arch=$(uname -i)', # Get the CPU architecture
                 'if [[ $arch == "aarch64" ]]; then',#
                 # Set variables and source scripts for aarch64
+                '   echo "Running on aarch64"',#
                 '   export CONDADIR=/nobackup/projects/<project>/$USER/aarchminiconda', # Update this with your <project> code.
                 '   source $CONDADIR/etc/profile.d/conda.sh',
                 'fi',
                 
                 ])
+        print("Running on BEDE")
+    
         comm="python3"
     #check if we on the submittor node :
     elif str(os.getenv("HOSTNAME","localhost")).startswith("localhost"):
@@ -158,6 +161,7 @@ def SlurmRun(trialconfig):
                              'export CONDADIR=$CONDA_PREFIX_1',                                                     #<-----CHANGE ME
                              'export WANDB_CACHE_DIR=/data', 
                              'export TEMP=/data',
+                             'source /etc/profile',
                              'export MODELDIR=/data/modelckpts',
                              'export ISHEC=False',])                                                 #<-----CHANGE ME])
     else:
@@ -174,14 +178,14 @@ def SlurmRun(trialconfig):
                              'export ISHEC=True',
                              'module add opence',
                              'conda activate $CONDADIR',
-                             
+                             'source /etc/profile',
+
                              ])                                                 #<-----CHANGE ME])
     sub_commands.extend([ '#SBATCH --{}={}\n'.format(cmd, value) for  (cmd, value) in slurm_commands.items()])
     sub_commands.extend([
         'export SLURM_NNODES=$SLURM_JOB_NUM_NODES',
         'export wandb=9cf7e97e2460c18a89429deed624ec1cbfb537bc',
         'export WANDB_API_KEY=9cf7e97e2460c18a89429deed624ec1cbfb537bc',                                                              #<-----CHANGE ME                                         
-        'source /etc/profile',
 
         #'pip install -r requirements.txt',                                                   # ...and activate the conda environment
     ])
@@ -271,7 +275,7 @@ if __name__ == '__main__':
 
             
             
-            result = call('{} {}'.format("sbatch", slurm_cmd_script_path), shell=True) #USE SBATCH For GHNodes
+            result = call('{} {}'.format("ghbatch", slurm_cmd_script_path), shell=True) #USE SBATCH For GHNodes
             if result == 0:
                 print('launched exp ', slurm_cmd_script_path)
                 
