@@ -145,7 +145,7 @@ def SlurmRun(trialconfig):
                 'if [[ $arch == "aarch64" ]]; then',#
                 # Set variables and source scripts for aarch64
                 '   echo "Running on aarch64"',#
-                '   export CONDADIR=/nobackup/projects/<project>/$USER/aarchminiconda', # Update this with your <project> code.
+                '   export CONDADIR=/nobackup/projects/bdlan05/$USER/aarchminiconda', # Update this with your <project> code.
                 '   source $CONDADIR/etc/profile.d/conda.sh',
                 'fi',
                 
