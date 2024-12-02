@@ -78,7 +78,7 @@ if __name__ == "__main__":
         Noise_captions = torch.add(captions, noise) 
         Noise_captions = torch.clamp(Noise_captions, 0, Vocab_size)
         scores,caption_encodes=BERTSCORE(captions,Noise_captions)#[B,B] and range (-1,1)
-
+        scores=scores[2]
         noise_caption_location=clip_model.encode_text(noise_caption_location.flatten(0,1))
         #print(REsults.shape)
         noise_caption_location=noise_caption_location.view(B,B,512)
