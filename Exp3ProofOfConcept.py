@@ -3,12 +3,8 @@
 
 # import COCO datamodule
 
-import os
-import sys
-import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-import matplotlib.lines as lines
+
 import torch
 from COCODataModule import MyDataModule
 import clip
