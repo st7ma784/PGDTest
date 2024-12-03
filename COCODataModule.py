@@ -175,7 +175,7 @@ class CustomCOCODatasetWithClasses(CocoCaptions):
         try:
             classes=self.lookup_classes(idx)      
         except:
-            print("Error looking up classes: ",idx)
+            #print("Error looking up classes: ",idx)
             return self.__getitem__(random.randint(0,len(self.ids)-1))
 
         # if self.transform:

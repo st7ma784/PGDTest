@@ -25,20 +25,23 @@ def encode_text(text):
     EOTs= x[torch.arange(x.shape[0]), text.argmax(dim=-1)]
 
     return x,EOTs # [batch_size, n_ctx, d_model]
+@torch.no_grad()
 def BERTSCORE(captions,Noise_captions):
-    Encoder=clip_model.encoder
     #captions is shape B,77
     #Noise_captions is shape B,B,77
     #this function is going to return a B,B tensor of bert scores
+    captions=captions.squeeze(1) #shape B,77
     captions,_EOTS=encode_text(captions) #shape B,77,512
-    Noise_captions,CaptEOTS=encode_text(Noise_captions.flatten(0,1)) #shape B,B,77,512
-    Noise_captions=Noise_captions.view(B,B,77,512).permute(0,2,1) #shape 77,B*B,512
+    Noise_captions,CaptEOTS=encode_text(Noise_captions.flatten(0,1)) #shape B,77,77,512
+    CaptEOTS=CaptEOTS.view(B,77,512)
+    Noise_captions=Noise_captions.view(B,77,77,512) #shape 77,B*B,512
     captions=captions.unsqueeze(1) #shape B,1,77,512
     captions=captions/ torch.norm(captions, dim=-1, keepdim=True)
     Noise_captions=Noise_captions/ torch.norm(Noise_captions, dim=-1, keepdim=True)
 
-    sim = (captions @ Noise_captions.transpose(-1, -2)).squeeze(-1)    
-    #sim shape is B,B,77,77
+    sim = (captions @ Noise_captions.transpose(-1, -2)).squeeze(-1)
+    #sim shape is B,77,77,77
+
     word_precision = sim.max(dim=-2)[0]
     word_recall = sim.max(dim=-1)[0]
     
@@ -46,15 +49,15 @@ def BERTSCORE(captions,Noise_captions):
     R = (word_recall).sum(dim=1) #shape B,B
     F = 2 * word_precision * word_recall / (word_precision + word_recall)
     F=F.sum(dim=-1)
-    print(F.shape)#assumed shape B,B
-    return (P,R,F),_EOTS,CaptEOTS.unflatten(0,(B,B,512))
+    # print(F.shape)#assumed shape B,B
+    return (P,R,F),_EOTS,CaptEOTS
 
 
 if __name__ == "__main__":
     from tqdm import tqdm
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('--batch_size', type=int, default=32)
+    parser.add_argument('--batch_size', type=int, default=16)
     parser.add_argument('--dataset', type=str, default='coco')
     parser.add_argument('--imagenet_root', type=str, default='./data')
     parser.add_argument('--tinyimagenet_root', type=str, default='./data')
@@ -62,6 +65,9 @@ if __name__ == "__main__":
     parser.add_argument('--debug', action='store_true')
     args = parser.parse_args()
     dm = MyDataModule(Cache_dir=args.cache_dir, dataset=args.dataset, batch_size=args.batch_size, imagenet_root=args.imagenet_root, tinyimagenet_root=args.tinyimagenet_root, debug=args.debug)
+    dm.train_dataset_names = ["coco"]
+    dm.prepare_data()
+    dm.setup()
     for input in tqdm(dm.train_dataloader()):
         _, _, captions = input
         #Ignore the image component, we just care about the target
@@ -69,23 +75,18 @@ if __name__ == "__main__":
         captions=captions.to(DEVICE)
         B =captions.shape[0]
 
-        noise= torch.randint(-Vocab_size, Vocab_size, (1,B,),device=DEVICE,dtype=torch.float32)
-        #print(noise.shape) #torch.Size([B])
-        noise=noise.unsqueeze(0)
-        captions=captions.unsqueeze(1)
+        noise= torch.randint(-Vocab_size, Vocab_size, (1,77,1),device=DEVICE,dtype=torch.long)
         
         #add the 2 to get the shape B,B,77
-        Noise_captions = torch.add(captions, noise) 
+        Noise_captions = torch.add(captions, noise) #B,77,77
         Noise_captions = torch.clamp(Noise_captions, 0, Vocab_size)
-        scores,caption_encodes=BERTSCORE(captions,Noise_captions)#[B,B] and range (-1,1)
+        #
+        scores,caption_Encs,Noise_captions_Encs=BERTSCORE(captions,Noise_captions)#[B,B] and range (-1,1)
         scores=scores[2]
-        noise_caption_location=clip_model.encode_text(noise_caption_location.flatten(0,1))
-        #print(REsults.shape)
-        noise_caption_location=noise_caption_location.view(B,B,512)
-        
+       
         #calculate Betrscoresbetween the GT and the noise caption
-        ground_truth.append(caption_encodes)
-        AttackedCaptions.append(noise_caption_location)
+        ground_truth.append(caption_Encs)
+        AttackedCaptions.append(Noise_captions_Encs)
         BertScores.append(scores)
 
 
