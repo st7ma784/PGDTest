@@ -152,3 +152,5 @@ MODELDIR/*
 .neptune/
 tmp_*/
 *.log
+BertScore_0.npz
+BertScore_1000.npz
